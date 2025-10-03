@@ -4,8 +4,7 @@ import { CustomerPolicyModel } from '@/lib/models/customerPolicy.model';
 import { PolicyModel } from '@/lib/models/policy.model';
 import { InsurerModel } from '@/lib/models/insurer.model';
 import { validateInsuranceData } from '@/lib/validation-insurance';
-import { ActivityLogger } from '@/lib/activity-logger';
-import { extractClientInfo } from '@/lib/activity-logger';
+import { getDatabase, COLLECTIONS, logActivity, LOG_ACTIONS } from '@/lib/models';
 import { ObjectId } from 'mongodb';
 
 export const GET = withAuth(async (req, context) => {
@@ -93,7 +92,6 @@ export const POST = withAuth(async (req, context) => {
   try {
     const user = context.user;
     const body = await req.json();
-    const { ipAddress, userAgent } = extractClientInfo(req);
 
     // Validate input data
     const validation = validateInsuranceData(body, 'customerPolicy');
@@ -179,21 +177,13 @@ export const POST = withAuth(async (req, context) => {
     const customerPolicy = await CustomerPolicyModel.create(customerPolicyData);
 
     // Log activity
-    await ActivityLogger.logActivity({
-      userId: user._id,
-      action: 'create',
-      entityType: 'customerPolicy',
-      entityId: customerPolicy._id,
-      entityName: customerPolicy.policyNumber,
-      details: { 
-        policyId: customerPolicy.policyId,
-        insurerId: customerPolicy.insurerId,
-        customerId: customerPolicy.customerId,
-        status: customerPolicy.status
-      },
-      ipAddress,
-      userAgent
-    });
+    await logActivity(
+      req.user._id,
+      LOG_ACTIONS.CREATE,
+      COLLECTIONS.CUSTOMER_POLICIES,
+      customerPolicy._id,
+      `Created customer policy: ${customerPolicy.policyNumber} - ₹${customerPolicy.premiumAmount}`
+    );
 
     return NextResponse.json({
       success: true,

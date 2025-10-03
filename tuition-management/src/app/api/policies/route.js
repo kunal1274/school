@@ -3,8 +3,7 @@ import { withAuth } from '@/lib/auth';
 import { PolicyModel } from '@/lib/models/policy.model';
 import { InsurerModel } from '@/lib/models/insurer.model';
 import { validateInsuranceData } from '@/lib/validation-insurance';
-import { ActivityLogger } from '@/lib/activity-logger';
-import { extractClientInfo } from '@/lib/activity-logger';
+import { getDatabase, COLLECTIONS, logActivity, LOG_ACTIONS } from '@/lib/models';
 import { ObjectId } from 'mongodb';
 
 export const GET = withAuth(async (req, context) => {
@@ -78,7 +77,6 @@ export const POST = withAuth(async (req, context) => {
   try {
     const user = context.user;
     const body = await req.json();
-    const { ipAddress, userAgent } = extractClientInfo(req);
 
     // Validate input data
     const validation = validateInsuranceData(body, 'policy');
@@ -138,21 +136,13 @@ export const POST = withAuth(async (req, context) => {
     const policy = await PolicyModel.create(policyData);
 
     // Log activity
-    await ActivityLogger.logActivity({
-      userId: user._id,
-      action: 'create',
-      entityType: 'policy',
-      entityId: policy._id,
-      entityName: policy.name,
-      details: { 
-        insurerId: policy.insurerId,
-        code: policy.code,
-        premiumAmount: policy.premiumAmount,
-        premiumFrequency: policy.premiumFrequency
-      },
-      ipAddress,
-      userAgent
-    });
+    await logActivity(
+      req.user._id,
+      LOG_ACTIONS.CREATE,
+      COLLECTIONS.POLICIES,
+      policy._id,
+      `Created policy: ${policy.name} (${policy.policyNumber}) - ₹${policy.premiumAmount}`
+    );
 
     return NextResponse.json({
       success: true,

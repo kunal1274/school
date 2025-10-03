@@ -1,278 +1,404 @@
-# Technical Design Document (TDD)
-## Tuition Management System with Insurance Domain
-
-**Version:** 1.0  
-**Date:** October 2, 2024  
-**Status:** Production Ready  
+# 🔧 **Technical Design Document (TDD)**
+## **Tuition Management System with Insurance Module**
 
 ---
 
-## 1. Document Overview
+## **📖 Document Information**
 
-### 1.1 Purpose
-This Technical Design Document provides detailed technical specifications, architecture decisions, and implementation guidelines for the Tuition Management System with integrated Insurance domain.
-
-### 1.2 Scope
-- System architecture and design patterns
-- Technology stack and framework choices
-- Database design and data modeling
-- API design and implementation
-- Security architecture
-- Performance optimization strategies
-- Deployment and infrastructure
-
-### 1.3 Target Audience
-- Software developers
-- System architects
-- DevOps engineers
-- Technical leads
-- QA engineers
+| Field | Value |
+|-------|-------|
+| **Document Title** | Technical Design Document - Tuition Management System |
+| **Version** | 2.0 |
+| **Date** | December 2024 |
+| **Author** | Development Team |
+| **Status** | Production Ready |
 
 ---
 
-## 2. System Architecture
+## **🎯 Executive Summary**
 
-### 2.1 High-Level Architecture
+This Technical Design Document outlines the complete technical architecture, implementation details, and system design for the Tuition Management System. The system is built using modern web technologies including Next.js 14, MongoDB, and implements a robust, scalable architecture with comprehensive security measures.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Client Layer                            │
-├─────────────────────────────────────────────────────────────────┤
-│  Next.js Frontend (React Components, Tailwind CSS, State Mgmt) │
-└─────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      Application Layer                         │
-├─────────────────────────────────────────────────────────────────┤
-│  Next.js API Routes (Authentication, Business Logic, Validation)│
-└─────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                       Data Layer                               │
-├─────────────────────────────────────────────────────────────────┤
-│  MongoDB Database (Collections, Indexes, Aggregation Pipelines) │
-└─────────────────────────────────────────────────────────────────┘
-```
+---
 
-### 2.2 Component Architecture
+## **🏗️ System Architecture**
+
+### **Technology Stack**
+
+| Layer | Technology | Version | Purpose |
+|-------|------------|---------|---------|
+| **Frontend** | Next.js | 14.x | React framework with SSR/SSG |
+| **Frontend** | React | 18.x | UI component library |
+| **Frontend** | Tailwind CSS | 3.x | Utility-first CSS framework |
+| **Backend** | Next.js API Routes | 14.x | Serverless API endpoints |
+| **Database** | MongoDB | 6.x | NoSQL document database |
+| **Authentication** | JWT | - | JSON Web Token authentication |
+| **Validation** | Custom | - | Client and server-side validation |
+| **Deployment** | Vercel | - | Serverless deployment platform |
+
+### **Architecture Diagram**
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Presentation  │    │   Application   │    │      Data       │
-│     Layer       │    │     Layer       │    │     Layer       │
-├─────────────────┤    ├─────────────────┤    ├─────────────────┤
-│ • React Pages   │    │ • API Routes    │    │ • MongoDB       │
-│ • Components    │    │ • Middleware    │    │ • Mongoose      │
-│ • Hooks         │    │ • Validation    │    │ • Collections   │
-│ • State Mgmt    │    │ • Business Logic│    │ • Indexes       │
-│ • UI/UX         │    │ • Authentication│    │ • Aggregations  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    CLIENT LAYER                             │
+├─────────────────────────────────────────────────────────────┤
+│  Next.js Frontend (React Components)                       │
+│  ├── Pages (App Router)                                    │
+│  ├── Components (Reusable UI)                              │
+│  ├── Contexts (State Management)                           │
+│  └── Hooks (Custom Logic)                                  │
+└─────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    API LAYER                                │
+├─────────────────────────────────────────────────────────────┤
+│  Next.js API Routes                                         │
+│  ├── Authentication Middleware                              │
+│  ├── Validation Layer                                       │
+│  ├── Business Logic                                         │
+│  └── Database Access Layer                                  │
+└─────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    DATA LAYER                               │
+├─────────────────────────────────────────────────────────────┤
+│  MongoDB Database                                           │
+│  ├── Collections (Tables)                                  │
+│  ├── Indexes (Performance)                                 │
+│  ├── Relationships (References)                            │
+│  └── Backup & Restore                                      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Technology Stack
+## **🗄️ Database Design**
 
-### 3.1 Frontend Technologies
+### **Database Schema**
 
-| Technology | Version | Purpose | Justification |
-|------------|---------|---------|---------------|
-| **Next.js** | 15.5.4 | React Framework | App Router, SSR, API routes, optimization |
-| **React** | 18.x | UI Library | Component-based architecture, hooks |
-| **Tailwind CSS** | 3.x | Styling | Utility-first, responsive design |
-| **JavaScript** | ES2022 | Programming Language | Modern features, async/await |
+#### **Core Collections**
 
-### 3.2 Backend Technologies
-
-| Technology | Version | Purpose | Justification |
-|------------|---------|---------|---------------|
-| **Node.js** | 18.x | Runtime | JavaScript ecosystem, performance |
-| **Next.js API Routes** | 15.5.4 | API Framework | Integrated with frontend, file-based routing |
-| **MongoDB** | 6.x | Database | Document-based, flexible schema |
-| **Mongoose** | 7.x | ODM | Schema validation, middleware, queries |
-
-### 3.3 Security & Authentication
-
-| Technology | Version | Purpose | Justification |
-|------------|---------|---------|---------------|
-| **JWT** | 9.x | Authentication | Stateless, secure token-based auth |
-| **bcryptjs** | 2.x | Password Hashing | Secure password storage |
-| **httpOnly Cookies** | - | Token Storage | XSS protection, secure storage |
-
-### 3.4 Development Tools
-
-| Technology | Version | Purpose | Justification |
-|------------|---------|---------|---------------|
-| **ESLint** | 8.x | Linting | Code quality, consistency |
-| **Jest** | 29.x | Testing | Unit and integration testing |
-| **React Testing Library** | 13.x | Component Testing | User-centric testing approach |
-| **Turbopack** | - | Build Tool | Fast development builds |
-
----
-
-## 4. Database Design
-
-### 4.1 Database Architecture
-
-```
-MongoDB Database: tuition_management
-├── Core Collections
-│   ├── users
-│   ├── students
-│   ├── teachers
-│   ├── customers
-│   ├── transport_customers
-│   ├── fees
-│   └── activity_logs
-└── Insurance Collections
-    ├── insurers
-    ├── policies
-    ├── customer_policies
-    ├── policy_payments
-    └── claims
-```
-
-### 4.2 Collection Schemas
-
-#### 4.2.1 Users Collection
 ```javascript
+// Users Collection
 {
   _id: ObjectId,
-  email: String (unique, indexed),
-  passwordHash: String,
-  firstName: String,
-  lastName: String,
+  email: String (unique, required),
+  passwordHash: String (required),
+  name: String (required),
+  phone: String,
   role: String (enum: ['admin', 'moderator', 'staff']),
   isActive: Boolean (default: true),
-  createdAt: Date (indexed),
+  lastLoginAt: Date,
+  createdAt: Date,
   updatedAt: Date,
-  lastLoginAt: Date
+  createdBy: ObjectId,
+  updatedBy: ObjectId
 }
-```
 
-#### 4.2.2 Students Collection
-```javascript
+// Students Collection
 {
   _id: ObjectId,
-  name: String (indexed),
-  email: String (unique, indexed),
-  phone: String,
-  address: String,
-  enrollmentDate: Date (indexed),
+  firstName: String (required),
+  lastName: String (required),
+  dob: Date (required),
+  gender: String (enum: ['male', 'female', 'other']),
+  classOrBatch: String (required),
+  parentName: String (required),
+  parentPhone: String (required),
+  address: String (required),
+  transportOptIn: Boolean (default: false),
+  notes: String,
   status: String (enum: ['active', 'inactive']),
-  createdAt: Date (indexed),
+  createdAt: Date,
   updatedAt: Date,
-  createdBy: ObjectId (ref: 'users')
+  createdBy: ObjectId,
+  updatedBy: ObjectId
 }
-```
 
-#### 4.2.3 Insurance Collections
-
-**Insurers Collection:**
-```javascript
+// Teachers Collection
 {
   _id: ObjectId,
-  name: String (unique, indexed),
-  code: String (indexed),
-  contactPerson: String,
-  phone: String,
+  name: String (required),
+  email: String (required),
+  phone: String (required),
+  subject: String (required),
+  qualification: String (required),
+  experience: Number (required),
+  address: String (required),
+  joiningDate: Date (required),
+  salary: Number (required),
+  status: String (enum: ['active', 'inactive']),
+  createdAt: Date,
+  updatedAt: Date,
+  createdBy: ObjectId,
+  updatedBy: ObjectId
+}
+
+// Customers Collection
+{
+  _id: ObjectId,
+  name: String (required),
+  phone: String (required),
   email: String,
-  address: String,
-  isActive: Boolean (default: true),
-  createdAt: Date (indexed),
+  address: String (required),
+  relationToStudent: String (required),
+  notes: String,
+  status: String (enum: ['active', 'inactive']),
+  createdAt: Date,
   updatedAt: Date,
-  createdBy: ObjectId (ref: 'users'),
-  updatedBy: ObjectId (ref: 'users')
+  createdBy: ObjectId,
+  updatedBy: ObjectId
 }
-```
 
-**Policies Collection:**
-```javascript
+// Transport Customers Collection
 {
   _id: ObjectId,
-  insurerId: ObjectId (ref: 'insurers', indexed),
-  name: String (indexed),
-  code: String,
-  description: String,
-  coverageDetails: String,
-  termMonths: Number (default: 12),
-  premiumAmount: Number (indexed),
-  premiumFrequency: String (enum: ['monthly', 'quarterly', 'yearly']),
-  minCoverAmount: Number,
-  maxCoverAmount: Number,
-  active: Boolean (default: true),
-  metadata: Object,
-  createdAt: Date (indexed),
+  name: String (required),
+  phone: String (required),
+  vehicleNo: String (required),
+  pickupPoint: String (required),
+  dropPoint: String (required),
+  assignedToStudentId: ObjectId,
+  fee: Number (required),
+  notes: String,
+  status: String (enum: ['active', 'inactive']),
+  createdAt: Date,
   updatedAt: Date,
-  createdBy: ObjectId (ref: 'users')
+  createdBy: ObjectId,
+  updatedBy: ObjectId
+}
+
+// Fees Collection
+{
+  _id: ObjectId,
+  studentId: ObjectId (required),
+  feeType: String (required),
+  amount: Number (required),
+  dueDate: Date (required),
+  paymentDate: Date,
+  paymentMode: String (required),
+  status: String (enum: ['paid', 'pending', 'overdue']),
+  notes: String,
+  transactionId: String (unique),
+  createdAt: Date,
+  updatedAt: Date,
+  createdBy: ObjectId,
+  updatedBy: ObjectId
 }
 ```
 
-### 4.3 Database Indexes
+#### **Insurance Collections**
 
-#### 4.3.1 Performance Indexes
 ```javascript
-// Users
-db.users.createIndex({ "email": 1 }, { unique: true })
-db.users.createIndex({ "role": 1 })
-db.users.createIndex({ "isActive": 1 })
+// Insurers Collection
+{
+  _id: ObjectId,
+  name: String (required),
+  code: String (required, unique),
+  contactPerson: String (required),
+  phone: String (required),
+  email: String (required),
+  address: String (required),
+  website: String,
+  licenseNumber: String (required),
+  isActive: Boolean (default: true),
+  createdAt: Date,
+  updatedAt: Date,
+  createdBy: ObjectId,
+  updatedBy: ObjectId
+}
 
-// Students
-db.students.createIndex({ "email": 1 }, { unique: true })
-db.students.createIndex({ "name": 1 })
-db.students.createIndex({ "status": 1 })
-db.students.createIndex({ "enrollmentDate": 1 })
+// Policies Collection
+{
+  _id: ObjectId,
+  insurerId: ObjectId (required),
+  name: String (required),
+  policyNumber: String (required, unique),
+  premiumAmount: Number (required),
+  premiumFrequency: String (enum: ['monthly', 'quarterly', 'yearly']),
+  minCoverAmount: Number (required),
+  maxCoverAmount: Number (required),
+  description: String,
+  termsAndConditions: String,
+  isActive: Boolean (default: true),
+  createdAt: Date,
+  updatedAt: Date,
+  createdBy: ObjectId,
+  updatedBy: ObjectId
+}
 
-// Insurance
-db.insurers.createIndex({ "name": 1 }, { unique: true })
-db.insurers.createIndex({ "code": 1 })
-db.policies.createIndex({ "insurerId": 1 })
-db.policies.createIndex({ "premiumAmount": 1 })
-db.customer_policies.createIndex({ "policyNumber": 1 }, { unique: true })
-db.customer_policies.createIndex({ "customerId": 1 })
-db.customer_policies.createIndex({ "policyId": 1 })
-db.policy_payments.createIndex({ "transactionId": 1 }, { unique: true })
-db.policy_payments.createIndex({ "customerPolicyId": 1 })
-db.claims.createIndex({ "claimNumber": 1 }, { unique: true })
-db.claims.createIndex({ "customerPolicyId": 1 })
+// Customer Policies Collection
+{
+  _id: ObjectId,
+  customerId: ObjectId (required),
+  policyId: ObjectId (required),
+  startDate: Date (required),
+  endDate: Date (required),
+  premiumAmount: Number (required),
+  paymentFrequency: String (enum: ['monthly', 'quarterly', 'yearly']),
+  nextPremiumDueDate: Date (auto-calculated),
+  status: String (enum: ['active', 'lapsed', 'cancelled', 'expired']),
+  createdAt: Date,
+  updatedAt: Date,
+  createdBy: ObjectId,
+  updatedBy: ObjectId
+}
+
+// Policy Payments Collection
+{
+  _id: ObjectId,
+  customerPolicyId: ObjectId (required),
+  amount: Number (required),
+  paymentDate: Date (required),
+  paymentMode: String (required),
+  transactionId: String (required, unique),
+  receiptNumber: String (auto-generated),
+  notes: String,
+  createdAt: Date,
+  updatedAt: Date,
+  createdBy: ObjectId,
+  updatedBy: ObjectId
+}
+
+// Claims Collection
+{
+  _id: ObjectId,
+  customerPolicyId: ObjectId (required),
+  claimNumber: String (required, unique),
+  dateOfEvent: Date (required),
+  amountClaimed: Number (required),
+  amountApproved: Number,
+  status: String (enum: ['draft', 'submitted', 'under_review', 'approved', 'rejected', 'settled']),
+  description: String (required),
+  supportingDocuments: [String],
+  claimantId: ObjectId,
+  handledBy: ObjectId,
+  createdAt: Date,
+  updatedAt: Date,
+  createdBy: ObjectId,
+  updatedBy: ObjectId
+}
 ```
 
-#### 4.3.2 Compound Indexes
-```javascript
-// Activity logs for efficient querying
-db.activity_logs.createIndex({ "userId": 1, "createdAt": -1 })
-db.activity_logs.createIndex({ "action": 1, "entityType": 1 })
+### **Database Indexes**
 
-// Fee tracking
-db.fees.createIndex({ "studentId": 1, "paymentDate": -1 })
-db.fees.createIndex({ "status": 1, "dueDate": 1 })
+```javascript
+// Performance Indexes
+db.users.createIndex({ email: 1 }, { unique: true })
+db.students.createIndex({ firstName: 1, lastName: 1 })
+db.students.createIndex({ parentPhone: 1 })
+db.teachers.createIndex({ email: 1 })
+db.customers.createIndex({ phone: 1 })
+db.fees.createIndex({ studentId: 1, status: 1 })
+db.fees.createIndex({ transactionId: 1 }, { unique: true })
+
+// Insurance Indexes
+db.insurers.createIndex({ code: 1 }, { unique: true })
+db.policies.createIndex({ policyNumber: 1 }, { unique: true })
+db.customerPolicies.createIndex({ customerId: 1, policyId: 1 })
+db.policyPayments.createIndex({ transactionId: 1 }, { unique: true })
+db.claims.createIndex({ claimNumber: 1 }, { unique: true })
+db.claims.createIndex({ customerPolicyId: 1 })
+
+// Activity Logs Indexes
+db.activityLogs.createIndex({ userId: 1, timestamp: -1 })
+db.activityLogs.createIndex({ entityType: 1, timestamp: -1 })
 ```
 
 ---
 
-## 5. API Design
+## **🔐 Authentication & Authorization**
 
-### 5.1 API Architecture
+### **JWT Implementation**
 
+```javascript
+// JWT Token Structure
+{
+  userId: ObjectId,
+  email: String,
+  role: String,
+  name: String,
+  iat: Number,
+  exp: Number
+}
+
+// Token Configuration
+const JWT_CONFIG = {
+  secret: process.env.JWT_SECRET,
+  expiresIn: '7d',
+  algorithm: 'HS256'
+}
 ```
-API Layer Structure:
-├── Authentication Middleware (withAuth)
-├── Validation Layer
-├── Business Logic Layer
-├── Data Access Layer
-└── Response Layer
+
+### **Authentication Middleware**
+
+```javascript
+// withAuth Middleware
+export function withAuth(handler, requiredRole = null) {
+  return async (req, context) => {
+    try {
+      // Extract token from cookies or headers
+      const token = extractToken(req);
+      
+      // Verify token
+      const user = await getUserFromToken(token);
+      if (!user) {
+        return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      }
+      
+      // Check role permissions
+      if (requiredRole && !hasPermission(user.role, requiredRole)) {
+        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+      }
+      
+      // Add user to request
+      req.user = user;
+      return handler(req, context);
+    } catch (error) {
+      return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
+    }
+  };
+}
 ```
 
-### 5.2 API Route Structure
+### **Role-Based Access Control**
+
+```javascript
+// Role Hierarchy
+const ROLE_HIERARCHY = {
+  staff: 1,
+  moderator: 2,
+  admin: 3
+};
+
+// Permission Functions
+export function hasPermission(userRole, requiredRole) {
+  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
+}
+
+export function canManageUsers(userRole) {
+  return userRole === 'admin';
+}
+
+export function canDeleteRecords(userRole) {
+  return userRole === 'admin' || userRole === 'moderator';
+}
+```
+
+---
+
+## **🛠️ API Design**
+
+### **API Route Structure**
 
 ```
 /api/
 ├── auth/
-│   ├── login (POST)
-│   ├── logout (POST)
-│   └── me (GET)
+│   ├── login/route.js
+│   ├── logout/route.js
+│   └── me/route.js
 ├── students/
 │   ├── route.js (GET, POST)
 │   └── [id]/route.js (GET, PUT, DELETE)
@@ -285,7 +411,7 @@ API Layer Structure:
 ├── fees/
 │   ├── route.js (GET, POST)
 │   ├── [id]/route.js (GET, PUT, DELETE)
-│   └── reports/route.js (GET)
+│   └── reports/route.js
 ├── insurers/
 │   ├── route.js (GET, POST)
 │   └── [id]/route.js (GET, PUT, DELETE)
@@ -293,22 +419,30 @@ API Layer Structure:
 │   ├── route.js (GET, POST)
 │   └── [id]/route.js (GET, PUT, DELETE)
 ├── customer-policies/
-│   └── route.js (GET, POST)
+│   ├── route.js (GET, POST)
+│   └── [id]/route.js (GET, PUT, DELETE)
 ├── policy-payments/
 │   ├── route.js (GET, POST)
 │   └── [id]/route.js (GET, PUT, DELETE)
 ├── claims/
 │   ├── route.js (GET, POST)
 │   └── [id]/route.js (GET, PUT, DELETE)
-└── insurance/
-    ├── reports/route.js (GET)
-    └── utils/route.js (GET)
+├── insurance/
+│   └── reports/route.js
+├── users/
+│   ├── route.js (GET, POST)
+│   └── [id]/route.js (GET, PUT, DELETE)
+├── activity-logs/route.js
+└── backup-restore/
+    ├── backup/route.js
+    ├── backups/route.js
+    └── restore/[id]/route.js
 ```
 
-### 5.3 API Response Format
+### **API Response Format**
 
-#### 5.3.1 Success Response
 ```javascript
+// Success Response
 {
   success: true,
   data: Object | Array,
@@ -316,804 +450,490 @@ API Layer Structure:
     page: Number,
     limit: Number,
     total: Number,
-    totalPages: Number,
-    hasNext: Boolean,
-    hasPrev: Boolean
+    pages: Number
   },
   message?: String
 }
-```
 
-#### 5.3.2 Error Response
-```javascript
+// Error Response
 {
   success: false,
   error: String,
-  errors?: Object, // Field-specific errors
-  details?: String // Additional error details
+  errors?: Object,
+  details?: String
 }
 ```
 
-### 5.4 Authentication Middleware
+### **API Endpoint Examples**
 
 ```javascript
-// withAuth middleware implementation
-export function withAuth(handler, requiredRole = null) {
-  return async (req, context) => {
-    try {
-      // Extract token from cookies or headers
-      const token = extractToken(req);
-      
-      if (!token) {
-        return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+// GET /api/students?page=1&limit=10&search=john
+export const GET = withAuth(async (request) => {
+  try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page')) || 1;
+    const limit = parseInt(searchParams.get('limit')) || 10;
+    const search = searchParams.get('search') || '';
+    
+    const db = await getDatabase();
+    const query = search ? {
+      $or: [
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } }
+      ]
+    } : {};
+    
+    const students = await db.collection(COLLECTIONS.STUDENTS)
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .toArray();
+    
+    const total = await db.collection(COLLECTIONS.STUDENTS).countDocuments(query);
+    
+    return NextResponse.json({
+      success: true,
+      data: students,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
       }
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch students' },
+      { status: 500 }
+    );
+  }
+}, 'staff');
 
-      // Verify token and get user
-      const user = await getUserFromToken(token);
-      
-      if (!user || !user.isActive) {
-        return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-      }
-
-      // Check role permissions
-      if (requiredRole && !hasPermission(user.role, requiredRole)) {
-        return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-      }
-
-      // Add user to request
-      req.user = user;
-      return handler(req, context);
-    } catch (error) {
-      return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
+// POST /api/students
+export const POST = withAuth(async (request) => {
+  try {
+    const data = await request.json();
+    
+    // Validate data
+    const validation = validateStudentData(data);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { success: false, errors: validation.errors },
+        { status: 400 }
+      );
     }
-  };
-}
+    
+    const db = await getDatabase();
+    const studentData = { ...data };
+    addAuditFields(studentData, request.user._id);
+    
+    const result = await db.collection(COLLECTIONS.STUDENTS).insertOne(studentData);
+    
+    // Log activity
+    await logActivity(
+      request.user._id,
+      LOG_ACTIONS.CREATE,
+      COLLECTIONS.STUDENTS,
+      result.insertedId,
+      `Created student: ${data.firstName} ${data.lastName}`
+    );
+    
+    return NextResponse.json({
+      success: true,
+      data: { _id: result.insertedId, ...studentData }
+    }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: 'Failed to create student' },
+      { status: 500 }
+    );
+  }
+}, 'staff');
 ```
 
 ---
 
-## 6. Security Architecture
+## **🎨 Frontend Architecture**
 
-### 6.1 Authentication Flow
-
-```
-1. User Login
-   ├── Validate credentials
-   ├── Generate JWT token
-   ├── Set httpOnly cookie
-   └── Return user data
-
-2. API Request
-   ├── Extract token from cookie/header
-   ├── Verify JWT signature
-   ├── Check user status
-   ├── Validate permissions
-   └── Process request
-
-3. Token Refresh
-   ├── Check token validity
-   ├── Generate new token
-   ├── Update cookie
-   └── Return new token
-```
-
-### 6.2 Security Measures
-
-#### 6.2.1 Input Validation
-```javascript
-// Validation schema example
-const userSchema = {
-  email: {
-    required: true,
-    type: 'string',
-    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    message: 'Valid email required'
-  },
-  password: {
-    required: true,
-    type: 'string',
-    minLength: 8,
-    pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-    message: 'Password must contain uppercase, lowercase, and number'
-  }
-};
-```
-
-#### 6.2.2 Data Sanitization
-```javascript
-// Sanitization functions
-function sanitizeInput(input) {
-  if (typeof input === 'string') {
-    return input.trim().replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  }
-  return input;
-}
-
-function validateObjectId(id) {
-  return ObjectId.isValid(id);
-}
-```
-
-#### 6.2.3 Role-Based Access Control
-```javascript
-// Permission matrix
-const PERMISSIONS = {
-  admin: ['read', 'create', 'update', 'delete', 'manage_users'],
-  moderator: ['read', 'create', 'update', 'delete'],
-  staff: ['read', 'create', 'update']
-};
-
-function hasPermission(userRole, action) {
-  return PERMISSIONS[userRole]?.includes(action) || false;
-}
-```
-
----
-
-## 7. Frontend Architecture
-
-### 7.1 Component Structure
+### **Component Structure**
 
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── (auth)/            # Auth group
-│   │   └── login/
-│   ├── dashboard/
+│   ├── (auth)/
+│   │   └── login/page.js
+│   ├── dashboard/page.js
 │   ├── students/
-│   │   ├── page.js        # List page
-│   │   ├── create/
+│   │   ├── page.js
+│   │   ├── create/page.js
 │   │   └── [id]/
-│   │       ├── page.js    # View page
-│   │       └── edit/
-│   └── api/               # API routes
-├── components/            # Reusable components
-│   ├── forms/            # Form components
-│   ├── Layout.js         # Main layout
-│   ├── ProtectedRoute.js # Auth wrapper
-│   └── CustomDialog.js   # Modal system
-├── contexts/             # React contexts
-│   └── AuthContext.js    # Authentication context
-├── lib/                  # Utilities and configurations
-│   ├── auth.js          # Auth utilities
-│   ├── models.js        # Database models
-│   ├── mongodb.js       # DB connection
-│   └── validation.js    # Validation functions
-└── scripts/             # Utility scripts
-    └── seed.js          # Database seeding
+│   │       ├── page.js
+│   │       └── edit/page.js
+│   ├── api/               # API Routes
+│   └── layout.js
+├── components/            # Reusable Components
+│   ├── Layout.js
+│   ├── ProtectedRoute.js
+│   ├── CustomDialog.js
+│   ├── forms/
+│   │   ├── FormInput.js
+│   │   ├── FormSelect.js
+│   │   └── FormTextarea.js
+│   └── DuplicateRecord.js
+├── contexts/              # React Contexts
+│   └── AuthContext.js
+├── lib/                   # Utilities & Helpers
+│   ├── auth.js
+│   ├── models.js
+│   ├── validation.js
+│   ├── validation-insurance.js
+│   ├── activity-logger.js
+│   └── models/            # Mongoose Models
+│       ├── insurer.model.js
+│       ├── policy.model.js
+│       ├── customerPolicy.model.js
+│       ├── policyPayment.model.js
+│       └── claim.model.js
+└── scripts/               # Database Scripts
+    ├── seed.js
+    └── seed-insurance.js
 ```
 
-### 7.2 State Management
+### **State Management**
 
-#### 7.2.1 React Hooks Pattern
 ```javascript
-// Custom hook for data fetching
-function useEntityData(entityType, filters = {}) {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchData();
-  }, [filters]);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/${entityType}?${new URLSearchParams(filters)}`);
-      const result = await response.json();
-      
-      if (result.success) {
-        setData(result.data);
-      } else {
-        setError(result.error);
-      }
-    } catch (err) {
-      setError('Failed to fetch data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return { data, loading, error, refetch: fetchData };
-}
-```
-
-#### 7.2.2 Context for Global State
-```javascript
-// AuthContext for user state
-const AuthContext = createContext();
+// AuthContext for Global State
+export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  const login = async (credentials) => {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials)
-    });
-    
-    const result = await response.json();
-    if (result.success) {
-      setUser(result.user);
-    }
-    return result;
+  
+  const login = async (email, password) => {
+    // Login logic
   };
-
+  
+  const logout = async () => {
+    // Logout logic
+  };
+  
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated,
+      loading,
+      login,
+      logout
+    }}>
       {children}
     </AuthContext.Provider>
   );
 }
 ```
 
-### 7.3 UI Component Design
+### **Custom Hooks**
 
-#### 7.3.1 Reusable Form Components
 ```javascript
-// FormInput component
-export function FormInput({ label, name, value, onChange, error, ...props }) {
-  return (
-    <div className="space-y-1">
-      <label className="block text-sm font-medium text-gray-700">
-        {label}
-      </label>
-      <input
-        name={name}
-        value={value}
-        onChange={onChange}
-        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 ${
-          error ? 'border-red-500' : 'border-gray-300'
-        }`}
-        {...props}
-      />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-    </div>
-  );
-}
-```
-
-#### 7.3.2 Data Table Component
-```javascript
-// DataTable component with pagination
-export function DataTable({ columns, data, pagination, onPageChange }) {
-  return (
-    <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              {columns.map((column) => (
-                <th key={column.key} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {column.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {data.map((row, index) => (
-              <tr key={index} className="hover:bg-gray-50">
-                {columns.map((column) => (
-                  <td key={column.key} className="px-6 py-4 whitespace-nowrap">
-                    {column.render ? column.render(row) : row[column.key]}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      
-      {pagination && (
-        <Pagination {...pagination} onPageChange={onPageChange} />
-      )}
-    </div>
-  );
+// useConfirmationDialog Hook
+export function useConfirmationDialog() {
+  const [dialogState, setDialogState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    onConfirm: null,
+    onCancel: null
+  });
+  
+  const showDialog = (title, message, type = 'info', onConfirm = null, onCancel = null) => {
+    setDialogState({
+      isOpen: true,
+      title,
+      message,
+      type,
+      onConfirm,
+      onCancel
+    });
+  };
+  
+  const alert = (title, message, type = 'info') => {
+    return new Promise((resolve) => {
+      showDialog(title, message, type, () => resolve(true));
+    });
+  };
+  
+  const confirm = (title, message, type = 'warning') => {
+    return new Promise((resolve) => {
+      showDialog(title, message, type, () => resolve(true), () => resolve(false));
+    });
+  };
+  
+  return { showDialog, alert, confirm, dialogState, setDialogState };
 }
 ```
 
 ---
 
-## 8. Performance Optimization
+## **🔍 Data Validation**
 
-### 8.1 Database Optimization
+### **Client-Side Validation**
 
-#### 8.1.1 Query Optimization
 ```javascript
-// Efficient aggregation pipeline
-const payments = await collection.aggregate([
-  { $match: filter },
-  { $sort: { paymentDate: -1 } },
-  { $skip: skip },
-  { $limit: limit },
-  {
-    $lookup: {
-      from: 'customer_policies',
-      localField: 'customerPolicyId',
-      foreignField: '_id',
-      as: 'customerPolicy'
-    }
-  },
-  {
-    $addFields: {
-      customerPolicy: { $arrayElemAt: ['$customerPolicy', 0] }
-    }
-  }
-]).toArray();
+// Form Validation Hook
+export function useFormValidation(initialData, validationRules) {
+  const [data, setData] = useState(initialData);
+  const [errors, setErrors] = useState({});
+  
+  const validate = () => {
+    const newErrors = {};
+    
+    Object.entries(validationRules).forEach(([field, rules]) => {
+      const value = data[field];
+      
+      if (rules.required && (!value || value.toString().trim() === '')) {
+        newErrors[field] = `${field} is required`;
+        return;
+      }
+      
+      if (rules.pattern && value && !rules.pattern.test(value)) {
+        newErrors[field] = rules.message || `Invalid ${field} format`;
+      }
+      
+      if (rules.minLength && value && value.length < rules.minLength) {
+        newErrors[field] = `${field} must be at least ${rules.minLength} characters`;
+      }
+    });
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  
+  return { data, setData, errors, validate };
+}
 ```
 
-#### 8.1.2 Indexing Strategy
+### **Server-Side Validation**
+
 ```javascript
-// Compound indexes for common queries
-db.fees.createIndex({ "studentId": 1, "paymentDate": -1 });
-db.activity_logs.createIndex({ "userId": 1, "createdAt": -1 });
-db.policy_payments.createIndex({ "customerPolicyId": 1, "paymentDate": -1 });
-```
-
-### 8.2 Frontend Optimization
-
-#### 8.2.1 Code Splitting
-```javascript
-// Dynamic imports for route-based code splitting
-const StudentsPage = dynamic(() => import('./students/page'), {
-  loading: () => <LoadingSpinner />
-});
-
-const ReportsPage = dynamic(() => import('./reports/page'), {
-  loading: () => <LoadingSpinner />
-});
-```
-
-#### 8.2.2 Caching Strategy
-```javascript
-// Client-side caching with useMemo
-const filteredData = useMemo(() => {
-  return data.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-}, [data, searchTerm]);
-
-// API response caching
-const cache = new Map();
-async function fetchWithCache(url) {
-  if (cache.has(url)) {
-    return cache.get(url);
+// Validation Functions
+export function validateStudentData(data, isUpdate = false) {
+  const errors = {};
+  
+  if (!validateRequired(data.firstName)) {
+    errors.firstName = 'First name is required';
+  } else if (!validateLength(data.firstName, 2, 50)) {
+    errors.firstName = 'First name must be between 2 and 50 characters';
   }
   
-  const response = await fetch(url);
-  const data = await response.json();
-  cache.set(url, data);
+  if (!validateRequired(data.lastName)) {
+    errors.lastName = 'Last name is required';
+  } else if (!validateLength(data.lastName, 2, 50)) {
+    errors.lastName = 'Last name must be between 2 and 50 characters';
+  }
+  
+  if (!validateRequired(data.dob)) {
+    errors.dob = 'Date of birth is required';
+  } else if (!validateDate(data.dob)) {
+    errors.dob = 'Invalid date format';
+  }
+  
+  if (!validateRequired(data.parentPhone)) {
+    errors.parentPhone = 'Parent phone is required';
+  } else if (!validatePhone(data.parentPhone)) {
+    errors.parentPhone = 'Invalid phone number format';
+  }
+  
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors
+  };
+}
+```
+
+---
+
+## **📊 Activity Logging**
+
+### **Logging System**
+
+```javascript
+// Activity Logger
+export class ActivityLogger {
+  static async logActivity({
+    userId,
+    action,
+    entityType,
+    entityId,
+    entityName,
+    details = {},
+    ipAddress = null,
+    userAgent = null
+  }) {
+    try {
+      const db = await getDatabase();
+      
+      const activityLog = {
+        userId,
+        action,
+        entityType,
+        entityId,
+        entityName,
+        details,
+        ipAddress,
+        userAgent,
+        timestamp: new Date(),
+        createdAt: new Date()
+      };
+      
+      await db.collection(COLLECTIONS.ACTIVITY_LOGS).insertOne(activityLog);
+      return activityLog;
+    } catch (error) {
+      console.error('Failed to log activity:', error);
+      return null;
+    }
+  }
+}
+```
+
+### **Audit Trail**
+
+```javascript
+// Audit Fields Helper
+export function addAuditFields(data, userId, isUpdate = false) {
+  const now = new Date();
+  
+  if (!isUpdate) {
+    data.createdAt = now;
+    data.createdBy = userId;
+  }
+  
+  data.updatedAt = now;
+  data.updatedBy = userId;
+  
   return data;
 }
 ```
 
-### 8.3 Build Optimization
-
-#### 8.3.1 Next.js Configuration
-```javascript
-// next.config.mjs
-const nextConfig = {
-  experimental: {
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
-  },
-  images: {
-    domains: ['localhost'],
-    formats: ['image/webp', 'image/avif'],
-  },
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
-};
-```
-
 ---
 
-## 9. Error Handling
+## **🚀 Performance Optimization**
 
-### 9.1 API Error Handling
-
-```javascript
-// Centralized error handling
-export function handleApiError(error, context = '') {
-  console.error(`API Error ${context}:`, error);
-  
-  if (error.name === 'ValidationError') {
-    return {
-      success: false,
-      error: 'Validation failed',
-      errors: formatValidationErrors(error.errors)
-    };
-  }
-  
-  if (error.name === 'MongoError' && error.code === 11000) {
-    return {
-      success: false,
-      error: 'Duplicate entry found'
-    };
-  }
-  
-  return {
-    success: false,
-    error: 'Internal server error'
-  };
-}
-```
-
-### 9.2 Frontend Error Handling
+### **Database Optimization**
 
 ```javascript
-// Error boundary component
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return <ErrorFallback error={this.state.error} />;
+// Query Optimization
+export async function getStudentsWithPagination(page = 1, limit = 10, filters = {}) {
+  const db = await getDatabase();
+  
+  // Build query with indexes
+  const query = buildQuery(filters);
+  
+  // Use aggregation pipeline for complex queries
+  const pipeline = [
+    { $match: query },
+    { $sort: { createdAt: -1 } },
+    { $skip: (page - 1) * limit },
+    { $limit: limit },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'createdBy',
+        foreignField: '_id',
+        as: 'creator'
+      }
     }
-
-    return this.props.children;
-  }
+  ];
+  
+  const [students, total] = await Promise.all([
+    db.collection(COLLECTIONS.STUDENTS).aggregate(pipeline).toArray(),
+    db.collection(COLLECTIONS.STUDENTS).countDocuments(query)
+  ]);
+  
+  return { students, total };
 }
 ```
 
----
-
-## 10. Testing Strategy
-
-### 10.1 Unit Testing
+### **Frontend Optimization**
 
 ```javascript
-// API route testing
-describe('/api/students', () => {
-  test('GET /api/students returns student list', async () => {
-    const response = await request(app)
-      .get('/api/students')
-      .set('Authorization', `Bearer ${validToken}`);
-    
-    expect(response.status).toBe(200);
-    expect(response.body.success).toBe(true);
-    expect(Array.isArray(response.body.data)).toBe(true);
-  });
-
-  test('POST /api/students creates new student', async () => {
-    const studentData = {
-      name: 'John Doe',
-      email: 'john@example.com',
-      phone: '1234567890'
-    };
-
-    const response = await request(app)
-      .post('/api/students')
-      .set('Authorization', `Bearer ${validToken}`)
-      .send(studentData);
-    
-    expect(response.status).toBe(200);
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.name).toBe(studentData.name);
-  });
+// Component Memoization
+export const StudentCard = memo(({ student, onEdit, onDelete }) => {
+  return (
+    <div className="student-card">
+      {/* Component content */}
+    </div>
+  );
 });
-```
 
-### 10.2 Component Testing
+// Lazy Loading
+const StudentForm = lazy(() => import('./StudentForm'));
 
-```javascript
-// React component testing
-import { render, screen, fireEvent } from '@testing-library/react';
-import { StudentForm } from '../StudentForm';
-
-describe('StudentForm', () => {
-  test('renders form fields', () => {
-    render(<StudentForm />);
-    
-    expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/phone/i)).toBeInTheDocument();
-  });
-
-  test('submits form with valid data', async () => {
-    const mockSubmit = jest.fn();
-    render(<StudentForm onSubmit={mockSubmit} />);
-    
-    fireEvent.change(screen.getByLabelText(/name/i), {
-      target: { value: 'John Doe' }
-    });
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'john@example.com' }
-    });
-    
-    fireEvent.click(screen.getByRole('button', { name: /submit/i }));
-    
-    expect(mockSubmit).toHaveBeenCalledWith({
-      name: 'John Doe',
-      email: 'john@example.com'
-    });
-  });
-});
+// Virtual Scrolling for Large Lists
+export function VirtualizedStudentList({ students }) {
+  return (
+    <FixedSizeList
+      height={600}
+      itemCount={students.length}
+      itemSize={80}
+      itemData={students}
+    >
+      {StudentRow}
+    </FixedSizeList>
+  );
+}
 ```
 
 ---
 
-## 11. Deployment Architecture
+## **🔒 Security Implementation**
 
-### 11.1 Production Environment
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Load Balancer │    │   Web Server    │    │   Database      │
-│   (Nginx)       │◄──►│   (Next.js)     │◄──►│   (MongoDB)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   SSL/TLS       │    │   Environment   │    │   Replica Set   │
-│   Certificate   │    │   Variables     │    │   Configuration │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-### 11.2 Environment Configuration
+### **Input Sanitization**
 
 ```javascript
-// Environment variables
-const config = {
-  development: {
-    MONGODB_URI: 'mongodb://localhost:27017/tuition_dev',
-    JWT_SECRET: 'dev-secret-key',
-    NODE_ENV: 'development'
-  },
-  production: {
-    MONGODB_URI: process.env.MONGODB_URI,
-    JWT_SECRET: process.env.JWT_SECRET,
-    NODE_ENV: 'production'
-  }
-};
-```
-
-### 11.3 Docker Configuration
-
-```dockerfile
-# Dockerfile
-FROM node:18-alpine AS base
-
-# Install dependencies only when needed
-FROM base AS deps
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-# Production image
-FROM base AS runner
-WORKDIR /app
-ENV NODE_ENV production
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-EXPOSE 3000
-ENV PORT 3000
-
-CMD ["node", "server.js"]
-```
-
----
-
-## 12. Monitoring and Logging
-
-### 12.1 Application Logging
-
-```javascript
-// Structured logging
-const logger = {
-  info: (message, meta = {}) => {
-    console.log(JSON.stringify({
-      level: 'info',
-      message,
-      timestamp: new Date().toISOString(),
-      ...meta
-    }));
-  },
+// Input Sanitization
+export function sanitizeInput(input) {
+  if (typeof input !== 'string') return input;
   
-  error: (message, error, meta = {}) => {
-    console.error(JSON.stringify({
-      level: 'error',
-      message,
-      error: error?.message,
-      stack: error?.stack,
-      timestamp: new Date().toISOString(),
-      ...meta
-    }));
-  }
-};
-```
+  return input
+    .trim()
+    .replace(/[<>]/g, '') // Remove potential HTML tags
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+=/gi, ''); // Remove event handlers
+}
 
-### 12.2 Performance Monitoring
-
-```javascript
-// API performance tracking
-export function withPerformanceTracking(handler) {
-  return async (req, context) => {
-    const start = Date.now();
-    
-    try {
-      const result = await handler(req, context);
-      const duration = Date.now() - start;
-      
-      logger.info('API request completed', {
-        method: req.method,
-        url: req.url,
-        duration,
-        status: result.status
-      });
-      
-      return result;
-    } catch (error) {
-      const duration = Date.now() - start;
-      
-      logger.error('API request failed', error, {
-        method: req.method,
-        url: req.url,
-        duration
-      });
-      
-      throw error;
-    }
+// XSS Protection
+export function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
   };
+  
+  return text.replace(/[&<>"']/g, (m) => map[m]);
 }
 ```
 
----
-
-## 13. Backup and Recovery
-
-### 13.1 Database Backup Strategy
-
-```bash
-#!/bin/bash
-# MongoDB backup script
-
-BACKUP_DIR="/backups/mongodb"
-DATE=$(date +%Y%m%d_%H%M%S)
-DB_NAME="tuition_management"
-
-# Create backup
-mongodump --db $DB_NAME --out $BACKUP_DIR/$DATE
-
-# Compress backup
-tar -czf $BACKUP_DIR/$DATE.tar.gz -C $BACKUP_DIR $DATE
-
-# Remove uncompressed backup
-rm -rf $BACKUP_DIR/$DATE
-
-# Keep only last 7 days of backups
-find $BACKUP_DIR -name "*.tar.gz" -mtime +7 -delete
-
-echo "Backup completed: $DATE.tar.gz"
-```
-
-### 13.2 Data Recovery Process
+### **CSRF Protection**
 
 ```javascript
-// Data recovery utility
-export async function restoreFromBackup(backupFile) {
-  try {
-    // Stop application
-    await stopApplication();
-    
-    // Restore database
-    await exec(`mongorestore --db tuition_management ${backupFile}`);
-    
-    // Verify data integrity
-    const userCount = await db.collection('users').countDocuments();
-    const studentCount = await db.collection('students').countDocuments();
-    
-    logger.info('Data recovery completed', {
-      users: userCount,
-      students: studentCount
-    });
-    
-    // Restart application
-    await startApplication();
-    
-    return { success: true, message: 'Recovery completed successfully' };
-  } catch (error) {
-    logger.error('Data recovery failed', error);
-    return { success: false, error: error.message };
-  }
+// CSRF Token Generation
+export function generateCSRFToken() {
+  return crypto.randomBytes(32).toString('hex');
 }
-```
 
----
-
-## 14. Security Considerations
-
-### 14.1 Data Encryption
-
-```javascript
-// Sensitive data encryption
-const crypto = require('crypto');
-
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
-const ALGORITHM = 'aes-256-gcm';
-
-function encrypt(text) {
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipher(ALGORITHM, ENCRYPTION_KEY);
-  cipher.setAAD(Buffer.from('tuition-management', 'utf8'));
-  
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  
-  const authTag = cipher.getAuthTag();
-  
-  return {
-    encrypted,
-    iv: iv.toString('hex'),
-    authTag: authTag.toString('hex')
-  };
-}
-```
-
-### 14.2 Rate Limiting
-
-```javascript
-// API rate limiting
-const rateLimit = new Map();
-
-export function withRateLimit(handler, options = {}) {
-  const { windowMs = 15 * 60 * 1000, max = 100 } = options;
-  
+// CSRF Middleware
+export function csrfMiddleware(handler) {
   return async (req, context) => {
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    const now = Date.now();
-    
-    if (!rateLimit.has(ip)) {
-      rateLimit.set(ip, { count: 1, resetTime: now + windowMs });
-    } else {
-      const limit = rateLimit.get(ip);
+    if (req.method !== 'GET') {
+      const token = req.headers.get('x-csrf-token');
+      const sessionToken = req.cookies.get('csrf-token')?.value;
       
-      if (now > limit.resetTime) {
-        limit.count = 1;
-        limit.resetTime = now + windowMs;
-      } else if (limit.count >= max) {
-        return NextResponse.json(
-          { error: 'Too many requests' },
-          { status: 429 }
-        );
-      } else {
-        limit.count++;
+      if (!token || token !== sessionToken) {
+        return NextResponse.json({ error: 'CSRF token mismatch' }, { status: 403 });
       }
     }
     
@@ -1124,95 +944,377 @@ export function withRateLimit(handler, options = {}) {
 
 ---
 
-## 15. Future Technical Enhancements
+## **📱 Responsive Design**
 
-### 15.1 Microservices Architecture
-
-```
-Current Monolith → Future Microservices
-├── User Service (Authentication & Authorization)
-├── Student Service (Student Management)
-├── Teacher Service (Teacher Management)
-├── Fee Service (Fee Collection & Tracking)
-├── Insurance Service (Insurance Domain)
-├── Notification Service (Email/SMS)
-└── Reporting Service (Analytics & Reports)
-```
-
-### 15.2 Caching Layer
+### **Tailwind CSS Configuration**
 
 ```javascript
-// Redis caching implementation
-const redis = require('redis');
-const client = redis.createClient(process.env.REDIS_URL);
-
-export async function getCachedData(key) {
-  try {
-    const cached = await client.get(key);
-    return cached ? JSON.parse(cached) : null;
-  } catch (error) {
-    logger.error('Cache read error', error);
-    return null;
-  }
-}
-
-export async function setCachedData(key, data, ttl = 3600) {
-  try {
-    await client.setex(key, ttl, JSON.stringify(data));
-  } catch (error) {
-    logger.error('Cache write error', error);
-  }
-}
-```
-
-### 15.3 API Gateway
-
-```javascript
-// API Gateway configuration
-const gateway = {
-  routes: [
-    {
-      path: '/api/students/*',
-      service: 'student-service',
-      rateLimit: { windowMs: 60000, max: 100 }
-    },
-    {
-      path: '/api/insurance/*',
-      service: 'insurance-service',
-      rateLimit: { windowMs: 60000, max: 50 }
-    }
+// tailwind.config.js
+module.exports = {
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#fff7ed',
+          500: '#f97316',
+          600: '#ea580c',
+          700: '#c2410c',
+        }
+      },
+      screens: {
+        'xs': '475px',
+      }
+    },
+  },
+  plugins: [],
+}
+```
+
+### **Responsive Components**
+
+```javascript
+// Responsive Layout Component
+export function ResponsiveLayout({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
-  middleware: [
-    'authentication',
-    'rate-limiting',
-    'logging',
-    'error-handling'
-  ]
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Sidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)}
+        isMobile={isMobile}
+      />
+      <main className={`transition-all duration-300 ${
+        sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'
+      }`}>
+        {children}
+      </main>
+    </div>
+  );
+}
+```
+
+---
+
+## **🧪 Testing Strategy**
+
+### **Unit Testing**
+
+```javascript
+// Component Testing
+import { render, screen, fireEvent } from '@testing-library/react';
+import { StudentForm } from './StudentForm';
+
+describe('StudentForm', () => {
+  test('renders form fields', () => {
+    render(<StudentForm />);
+    
+    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/date of birth/i)).toBeInTheDocument();
+  });
+  
+  test('validates required fields', async () => {
+    render(<StudentForm />);
+    
+    fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+    
+    expect(await screen.findByText(/first name is required/i)).toBeInTheDocument();
+  });
+});
+```
+
+### **API Testing**
+
+```javascript
+// API Route Testing
+import { GET, POST } from './route';
+import { NextRequest } from 'next/server';
+
+describe('/api/students', () => {
+  test('GET returns students list', async () => {
+    const request = new NextRequest('http://localhost:3000/api/students');
+    const response = await GET(request);
+    const data = await response.json();
+    
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(Array.isArray(data.data)).toBe(true);
+  });
+  
+  test('POST creates new student', async () => {
+    const studentData = {
+      firstName: 'John',
+      lastName: 'Doe',
+      dob: '2010-01-01',
+      gender: 'male',
+      classOrBatch: 'Grade 5',
+      parentName: 'Jane Doe',
+      parentPhone: '+1234567890',
+      address: '123 Main St'
+    };
+    
+    const request = new NextRequest('http://localhost:3000/api/students', {
+      method: 'POST',
+      body: JSON.stringify(studentData)
+    });
+    
+    const response = await POST(request);
+    const data = await response.json();
+    
+    expect(response.status).toBe(201);
+    expect(data.success).toBe(true);
+    expect(data.data.firstName).toBe('John');
+  });
+});
+```
+
+---
+
+## **🚀 Deployment Configuration**
+
+### **Vercel Configuration**
+
+```javascript
+// vercel.json
+{
+  "functions": {
+    "src/app/api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "MONGODB_URI": "@mongodb-uri",
+    "JWT_SECRET": "@jwt-secret"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_APP_URL": "https://tuition-manager.vercel.app"
+    }
+  }
+}
+```
+
+### **Environment Variables**
+
+```bash
+# .env.local
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/tuition-management
+JWT_SECRET=your-super-secret-jwt-key-here
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development
+```
+
+### **MongoDB Atlas Configuration**
+
+```javascript
+// Database Connection
+export async function getDatabase() {
+  if (cachedDb) {
+    return cachedDb;
+  }
+  
+  const client = new MongoClient(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+  
+  await client.connect();
+  cachedDb = client.db('tuition-management');
+  
+  return cachedDb;
+}
+```
+
+---
+
+## **📈 Monitoring & Analytics**
+
+### **Error Tracking**
+
+```javascript
+// Error Boundary
+export class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+  
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+    // Log to monitoring service
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return <ErrorFallback />;
+    }
+    
+    return this.props.children;
+  }
+}
+```
+
+### **Performance Monitoring**
+
+```javascript
+// Performance Metrics
+export function trackPerformance(metricName, value) {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'timing_complete', {
+      name: metricName,
+      value: value
+    });
+  }
+}
+
+// API Response Time Tracking
+export function withPerformanceTracking(handler) {
+  return async (req, context) => {
+    const start = Date.now();
+    const response = await handler(req, context);
+    const duration = Date.now() - start;
+    
+    trackPerformance('api_response_time', duration);
+    
+    return response;
+  };
+}
+```
+
+---
+
+## **📋 Development Guidelines**
+
+### **Code Standards**
+
+```javascript
+// ESLint Configuration
+module.exports = {
+  extends: [
+    'next/core-web-vitals',
+    'eslint:recommended',
+    '@typescript-eslint/recommended'
+  ],
+  rules: {
+    'no-console': 'warn',
+    'no-unused-vars': 'error',
+    'prefer-const': 'error',
+    'no-var': 'error'
+  }
+};
+
+// Prettier Configuration
+module.exports = {
+  semi: true,
+  trailingComma: 'es5',
+  singleQuote: true,
+  printWidth: 80,
+  tabWidth: 2
 };
 ```
 
+### **Git Workflow**
+
+```bash
+# Feature Branch Workflow
+git checkout -b feature/student-management
+git add .
+git commit -m "feat: add student CRUD operations"
+git push origin feature/student-management
+
+# Pull Request Template
+## Description
+Brief description of changes
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
+
+## Testing
+- [ ] Unit tests pass
+- [ ] Integration tests pass
+- [ ] Manual testing completed
+```
+
 ---
 
-## 16. Conclusion
+## **📚 API Documentation**
 
-This Technical Design Document provides a comprehensive overview of the Tuition Management System's technical architecture, implementation details, and design decisions. The system is built with modern technologies, follows best practices, and is designed for scalability, security, and maintainability.
+### **Authentication Endpoints**
 
-**Key Technical Achievements:**
-- ✅ Modern Next.js architecture with App Router
-- ✅ Robust MongoDB database design with proper indexing
-- ✅ Comprehensive API design with authentication and validation
-- ✅ Secure authentication and authorization system
-- ✅ Performance-optimized frontend and backend
-- ✅ Comprehensive error handling and logging
-- ✅ Production-ready deployment configuration
-- ✅ Extensive testing strategy
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/auth/login` | User login | No |
+| POST | `/api/auth/logout` | User logout | Yes |
+| GET | `/api/auth/me` | Get current user | Yes |
 
-**System Status:** Production Ready ✅
+### **Student Endpoints**
+
+| Method | Endpoint | Description | Auth Required | Role |
+|--------|----------|-------------|---------------|------|
+| GET | `/api/students` | List students | Yes | Staff+ |
+| POST | `/api/students` | Create student | Yes | Staff+ |
+| GET | `/api/students/[id]` | Get student | Yes | Staff+ |
+| PUT | `/api/students/[id]` | Update student | Yes | Staff+ |
+| DELETE | `/api/students/[id]` | Delete student | Yes | Moderator+ |
+
+### **Insurance Endpoints**
+
+| Method | Endpoint | Description | Auth Required | Role |
+|--------|----------|-------------|---------------|------|
+| GET | `/api/insurers` | List insurers | Yes | Staff+ |
+| POST | `/api/insurers` | Create insurer | Yes | Moderator+ |
+| GET | `/api/policies` | List policies | Yes | Staff+ |
+| POST | `/api/policies` | Create policy | Yes | Moderator+ |
+| GET | `/api/claims` | List claims | Yes | Staff+ |
+| POST | `/api/claims` | Create claim | Yes | Staff+ |
 
 ---
 
-*Document Version: 1.0*  
-*Last Updated: October 2, 2024*  
-*Total Pages: 16*  
-*Status: Technical Implementation Complete*
+## **🎯 Future Enhancements**
+
+### **Planned Features**
+- [ ] Real-time notifications
+- [ ] Advanced reporting with charts
+- [ ] Mobile app development
+- [ ] Payment gateway integration
+- [ ] Email/SMS notifications
+- [ ] Advanced search with filters
+- [ ] Data import/export tools
+- [ ] Multi-language support
+
+### **Technical Improvements**
+- [ ] GraphQL API implementation
+- [ ] Redis caching layer
+- [ ] Microservices architecture
+- [ ] Container deployment
+- [ ] Advanced monitoring
+- [ ] Automated testing pipeline
+- [ ] CI/CD implementation
+
+---
+
+*This Technical Design Document provides comprehensive technical specifications for the Tuition Management System implementation.*

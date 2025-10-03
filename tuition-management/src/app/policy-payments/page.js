@@ -11,7 +11,7 @@ import DuplicateRecord, { useDuplicateRecord } from '@/components/DuplicateRecor
 export default function PolicyPaymentsPage() {
   const router = useRouter();
   const { showConfirmation } = useConfirmationDialog();
-  const { duplicateRecord } = useDuplicateRecord('PolicyPayment');
+  // Remove the hook usage since DuplicateRecord component handles it internally
 
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,9 +102,7 @@ export default function PolicyPaymentsPage() {
     }
   };
 
-  const handleDuplicate = async (paymentId) => {
-    await duplicateRecord(paymentId, () => fetchPayments());
-  };
+  // Remove handleDuplicate since DuplicateRecord component handles it internally
 
   if (loading) {
     return (
@@ -289,12 +287,12 @@ export default function PolicyPaymentsPage() {
                         >
                           Edit
                         </Link>
-                        <button
-                          onClick={() => handleDuplicate(payment._id)}
+                        <DuplicateRecord
+                          record={payment}
+                          recordType="PolicyPayment"
+                          onDuplicate={() => fetchPayments()}
                           className="text-green-600 hover:text-green-900"
-                        >
-                          Duplicate
-                        </button>
+                        />
                         <button
                           onClick={() => handleDelete(payment._id, payment.transactionId)}
                           className="text-red-600 hover:text-red-900"

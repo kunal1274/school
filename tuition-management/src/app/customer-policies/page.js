@@ -11,7 +11,7 @@ import DuplicateRecord, { useDuplicateRecord } from '@/components/DuplicateRecor
 export default function CustomerPoliciesPage() {
   const router = useRouter();
   const { showConfirmation } = useConfirmationDialog();
-  const { duplicateRecord } = useDuplicateRecord('CustomerPolicy');
+  // Remove the hook usage since DuplicateRecord component handles it internally
 
   const [customerPolicies, setCustomerPolicies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,18 +93,16 @@ export default function CustomerPoliciesPage() {
           await fetchCustomerPolicies(); // Refresh the list
         } else {
           const errorData = await response.json();
-          alert('Error', errorData.error || 'Failed to delete customer policy');
+          await showConfirmation('Error', errorData.error || 'Failed to delete customer policy', 'error');
         }
       } catch (error) {
         console.error('Error deleting customer policy:', error);
-        alert('Error', 'Failed to delete customer policy');
+        await showConfirmation('Error', 'Failed to delete customer policy', 'error');
       }
     }
   };
 
-  const handleDuplicate = async (customerPolicyId) => {
-    await duplicateRecord(customerPolicyId, () => fetchCustomerPolicies());
-  };
+  // Remove handleDuplicate since DuplicateRecord component handles it internally
 
   if (loading) {
     return (
@@ -296,12 +294,12 @@ export default function CustomerPoliciesPage() {
                         >
                           Edit
                         </Link>
-                        <button
-                          onClick={() => handleDuplicate(customerPolicy._id)}
+                        <DuplicateRecord
+                          record={customerPolicy}
+                          recordType="CustomerPolicy"
+                          onDuplicate={() => fetchCustomerPolicies()}
                           className="text-green-600 hover:text-green-900"
-                        >
-                          Duplicate
-                        </button>
+                        />
                         <button
                           onClick={() => handleDelete(customerPolicy._id, customerPolicy.policyNumber)}
                           className="text-red-600 hover:text-red-900"

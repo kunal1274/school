@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useConfirmationDialog } from '@/components/CustomDialog';
 import FormInput from '@/components/forms/FormInput';
 import FormTextarea from '@/components/forms/FormTextarea';
 
 export default function CreateCustomerPage() {
   const router = useRouter();
+  const { showDialog, DialogComponent } = useConfirmationDialog();
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -61,12 +63,12 @@ export default function CreateCustomerPage() {
         if (data.details) {
           setErrors(data.details);
         } else {
-          alert(data.error || 'Failed to create customer');
+          await showDialog('Error', data.error || 'Failed to create customer', 'error');
         }
       }
     } catch (error) {
       console.error('Error creating customer:', error);
-      alert('Failed to create customer');
+      await showDialog('Error', 'Failed to create customer', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -215,6 +217,7 @@ export default function CreateCustomerPage() {
           </form>
         </div>
       </Layout>
+      <DialogComponent />
     </ProtectedRoute>
   );
 }

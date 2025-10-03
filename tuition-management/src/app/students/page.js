@@ -11,7 +11,7 @@ import DuplicateRecord, { useDuplicateRecord } from '@/components/DuplicateRecor
 export default function StudentsPage() {
   const router = useRouter();
   const { showConfirmation } = useConfirmationDialog();
-  const { duplicateRecord } = useDuplicateRecord('Student');
+  // Remove the hook usage since DuplicateRecord component handles it internally
 
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,9 +103,7 @@ export default function StudentsPage() {
     }
   };
 
-  const handleDuplicate = async (studentId) => {
-    await duplicateRecord(studentId, () => fetchStudents());
-  };
+  // Remove handleDuplicate since DuplicateRecord component handles it internally
 
   if (loading) {
     return (
@@ -291,12 +289,12 @@ export default function StudentsPage() {
                         >
                           Edit
                         </Link>
-                        <button
-                          onClick={() => handleDuplicate(student._id)}
+                        <DuplicateRecord
+                          record={student}
+                          recordType="Student"
+                          onDuplicate={() => fetchStudents()}
                           className="text-green-600 hover:text-green-900"
-                        >
-                          Duplicate
-                        </button>
+                        />
                         <button
                           onClick={() => handleDelete(student._id, `${student.firstName} ${student.lastName}`)}
                           className="text-red-600 hover:text-red-900"

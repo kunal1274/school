@@ -3,8 +3,7 @@ import { withAuth } from '@/lib/auth';
 import { PolicyModel } from '@/lib/models/policy.model';
 import { InsurerModel } from '@/lib/models/insurer.model';
 import { validateInsuranceData } from '@/lib/validation-insurance';
-import { ActivityLogger } from '@/lib/activity-logger';
-import { extractClientInfo } from '@/lib/activity-logger';
+import { getDatabase, COLLECTIONS, logActivity, LOG_ACTIONS } from '@/lib/models';
 import { ObjectId } from 'mongodb';
 
 export const GET = withAuth(async (req, context) => {
@@ -59,7 +58,6 @@ export const PUT = withAuth(async (req, context) => {
     const { id } = context.params;
     const user = context.user;
     const body = await req.json();
-    const { ipAddress, userAgent } = extractClientInfo(req);
 
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -145,19 +143,13 @@ export const PUT = withAuth(async (req, context) => {
     const updatedPolicy = await PolicyModel.update(new ObjectId(id), updateData);
 
     // Log activity
-    await ActivityLogger.logActivity({
-      userId: user._id,
-      action: 'update',
-      entityType: 'policy',
-      entityId: updatedPolicy._id,
-      entityName: updatedPolicy.name,
-      details: { 
-        changes: Object.keys(body),
-        previousValues: existingPolicy
-      },
-      ipAddress,
-      userAgent
-    });
+    await logActivity(
+      req.user._id,
+      LOG_ACTIONS.UPDATE,
+      COLLECTIONS.POLICIES,
+      new ObjectId(id),
+      `Updated policy: ${existingPolicy.name} → ${updateData.name || existingPolicy.name}`
+    );
 
     return NextResponse.json({
       success: true,
@@ -176,7 +168,6 @@ export const DELETE = withAuth(async (req, context) => {
   try {
     const { id } = context.params;
     const user = context.user;
-    const { ipAddress, userAgent } = extractClientInfo(req);
 
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -207,20 +198,13 @@ export const DELETE = withAuth(async (req, context) => {
     await PolicyModel.delete(new ObjectId(id));
 
     // Log activity
-    await ActivityLogger.logActivity({
-      userId: user._id,
-      action: 'delete',
-      entityType: 'policy',
-      entityId: existingPolicy._id,
-      entityName: existingPolicy.name,
-      details: { 
-        insurerId: existingPolicy.insurerId,
-        code: existingPolicy.code,
-        premiumAmount: existingPolicy.premiumAmount
-      },
-      ipAddress,
-      userAgent
-    });
+    await logActivity(
+      req.user._id,
+      LOG_ACTIONS.DELETE,
+      COLLECTIONS.POLICIES,
+      new ObjectId(id),
+      `Deleted policy: ${existingPolicy.name} (${existingPolicy.policyNumber})`
+    );
 
     return NextResponse.json({
       success: true,

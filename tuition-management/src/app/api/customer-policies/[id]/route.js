@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth';
-import { getDatabase, COLLECTIONS } from '@/lib/models';
+import { getDatabase, COLLECTIONS, logActivity, LOG_ACTIONS } from '@/lib/models';
 import { validateInsuranceData } from '@/lib/validation-insurance';
 import { ObjectId } from 'mongodb';
 
@@ -128,6 +128,15 @@ export const PUT = withAuth(async (request, context) => {
       );
     }
 
+    // Log activity
+    await logActivity(
+      request.user._id,
+      LOG_ACTIONS.UPDATE,
+      COLLECTIONS.CUSTOMER_POLICIES,
+      new ObjectId(id),
+      `Updated customer policy: ${existingPolicy.policyNumber}`
+    );
+
     // Fetch updated customer policy
     const updatedPolicy = await db.collection(COLLECTIONS.CUSTOMER_POLICIES)
       .aggregate([
@@ -224,6 +233,15 @@ export const DELETE = withAuth(async (request, context) => {
         { status: 500 }
       );
     }
+
+    // Log activity
+    await logActivity(
+      request.user._id,
+      LOG_ACTIONS.DELETE,
+      COLLECTIONS.CUSTOMER_POLICIES,
+      new ObjectId(id),
+      `Deleted customer policy: ${existingPolicy.policyNumber}`
+    );
 
     return NextResponse.json({
       success: true,

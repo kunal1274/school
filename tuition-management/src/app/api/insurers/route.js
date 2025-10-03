@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth';
 import { InsurerModel } from '@/lib/models/insurer.model';
 import { validateInsuranceData } from '@/lib/validation-insurance';
-import { ActivityLogger } from '@/lib/activity-logger';
-import { extractClientInfo } from '@/lib/activity-logger';
+import { getDatabase, COLLECTIONS, logActivity, LOG_ACTIONS } from '@/lib/models';
 import { ObjectId } from 'mongodb';
 
 export const GET = withAuth(async (req, context) => {
@@ -56,7 +55,6 @@ export const POST = withAuth(async (req, context) => {
   try {
     const user = context.user;
     const body = await req.json();
-    const { ipAddress, userAgent } = extractClientInfo(req);
 
     // Validate input data
     const validation = validateInsuranceData(body, 'insurer');
@@ -97,16 +95,13 @@ export const POST = withAuth(async (req, context) => {
     const insurer = await InsurerModel.create(insurerData);
 
     // Log activity
-    await ActivityLogger.logActivity({
-      userId: new ObjectId(user._id),
-      action: 'create',
-      entityType: 'insurer',
-      entityId: insurer._id,
-      entityName: insurer.name,
-      details: { code: insurer.code },
-      ipAddress,
-      userAgent
-    });
+    await logActivity(
+      req.user._id,
+      LOG_ACTIONS.CREATE,
+      COLLECTIONS.INSURERS,
+      insurer._id,
+      `Created insurer: ${insurer.name} (${insurer.code})`
+    );
 
     return NextResponse.json({
       success: true,

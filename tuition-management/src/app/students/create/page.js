@@ -12,7 +12,7 @@ import { useConfirmationDialog } from '@/components/CustomDialog';
 
 export default function CreateStudentPage() {
   const router = useRouter();
-  const { alert, DialogComponent } = useConfirmationDialog();
+  const { showDialog, DialogComponent } = useConfirmationDialog();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -72,12 +72,12 @@ export default function CreateStudentPage() {
         if (data.details) {
           setErrors(data.details);
         } else {
-          alert('Error', data.error || 'Failed to create student', 'error');
+          await showDialog('Error', data.error || 'Failed to create student', 'error');
         }
       }
     } catch (error) {
       console.error('Error creating student:', error);
-      alert('Error', 'Failed to create student. Please try again.', 'error');
+      await showDialog('Error', 'Failed to create student. Please try again.', 'error');
     } finally {
       setIsSubmitting(false);
     }

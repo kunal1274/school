@@ -1,557 +1,485 @@
-# Functional Design Document (FDD)
-## Tuition Management System with Insurance Domain
-
-**Version:** 1.0  
-**Date:** October 2, 2024  
-**Status:** Production Ready  
+# 📋 **Functional Design Document (FDD)**
+## **Tuition Management System with Insurance Module**
 
 ---
 
-## 1. Executive Summary
+## **📖 Document Information**
 
-### 1.1 Purpose
-This document outlines the functional design of a comprehensive Tuition Management System with integrated Insurance domain, built using Next.js, MongoDB, and modern web technologies.
-
-### 1.2 Scope
-The system manages:
-- Student and Teacher records
-- Customer and Transport customer management
-- Fee collection and tracking
-- Insurance policy management
-- Claims processing
-- User authentication and authorization
-- Reporting and analytics
-
-### 1.3 Key Features
-- Role-based access control (Admin, Moderator, Staff)
-- Comprehensive CRUD operations
-- Real-time dashboard with KPIs
-- Advanced reporting and analytics
-- Insurance domain integration
-- Audit trail and activity logging
+| Field | Value |
+|-------|-------|
+| **Document Title** | Functional Design Document - Tuition Management System |
+| **Version** | 2.0 |
+| **Date** | December 2024 |
+| **Author** | Development Team |
+| **Status** | Production Ready |
 
 ---
 
-## 2. System Architecture
+## **🎯 Executive Summary**
 
-### 2.1 Technology Stack
-```
-Frontend: Next.js 15.5.4 (App Router), React, Tailwind CSS
-Backend: Next.js API Routes, Node.js
-Database: MongoDB with Mongoose ODM
-Authentication: JWT with httpOnly cookies
-Security: bcryptjs, input validation, RBAC
-```
+The Tuition Management System is a comprehensive web application designed to manage educational institutions' operations, including student management, fee collection, teacher administration, and insurance services. The system provides role-based access control, real-time reporting, and seamless integration between tuition and insurance modules.
 
-### 2.2 System Components
+---
+
+## **🏗️ System Architecture Overview**
+
+### **High-Level Architecture**
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend UI   │    │   API Routes    │    │   Database      │
-│   (Next.js)     │◄──►│   (Next.js)     │◄──►│   (MongoDB)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Components    │    │   Middleware    │    │   Collections   │
-│   - Layout      │    │   - withAuth    │    │   - Users       │
-│   - Forms       │    │   - Validation  │    │   - Students    │
-│   - Tables      │    │   - Logging     │    │   - Insurance   │
+│   Frontend      │    │   Backend       │    │   Database      │
+│   (Next.js)     │◄──►│   (API Routes)  │◄──►│   (MongoDB)     │
+│                 │    │                 │    │                 │
+│ • React Pages   │    │ • REST APIs     │    │ • Collections   │
+│ • Components    │    │ • Authentication│    │ • Indexes       │
+│ • State Mgmt    │    │ • Validation    │    │ • Relationships │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
----
-
-## 3. Functional Requirements
-
-### 3.1 User Management
-
-#### 3.1.1 User Authentication
-- **Login**: Email/password authentication
-- **Session Management**: JWT tokens with 7-day expiration
-- **Logout**: Secure session termination
-- **Password Security**: bcryptjs hashing
-
-#### 3.1.2 User Roles
-| Role | Permissions |
-|------|-------------|
-| **Admin** | Full system access, user management, all CRUD operations |
-| **Moderator** | Most CRUD operations, limited user management, reports |
-| **Staff** | View/create records, limited edit, no delete permissions |
-
-### 3.2 Core Entity Management
-
-#### 3.2.1 Student Management
-- **Create**: Add new student with personal details, contact info, enrollment date
-- **Read**: View student list with search, filter, pagination
-- **Update**: Edit student information
-- **Delete**: Remove student records (Admin/Moderator only)
-- **Fields**: Name, email, phone, address, enrollment date, status
-
-#### 3.2.2 Teacher Management
-- **Create**: Add teacher with qualifications, subjects, salary info
-- **Read**: View teacher list with search and filtering
-- **Update**: Edit teacher details
-- **Delete**: Remove teacher records (Admin/Moderator only)
-- **Fields**: Name, email, phone, subjects, qualifications, salary, hire date
-
-#### 3.2.3 Customer Management
-- **Create**: Add customer with contact details and preferences
-- **Read**: View customer list with search functionality
-- **Update**: Edit customer information
-- **Delete**: Remove customer records (Admin/Moderator only)
-- **Fields**: Name, email, phone, address, customer type, status
-
-#### 3.2.4 Transport Customer Management
-- **Create**: Add transport customer with route and payment details
-- **Read**: View transport customers with route filtering
-- **Update**: Edit transport customer information
-- **Delete**: Remove transport customer records (Admin/Moderator only)
-- **Fields**: Name, route, pickup/drop points, monthly fee, payment status
-
-### 3.3 Fee Management
-
-#### 3.3.1 Fee Collection
-- **Create**: Record fee payments with amount, date, payment mode
-- **Read**: View fee records with filtering by student, date, status
-- **Update**: Edit fee payment details
-- **Delete**: Remove fee records (Admin/Moderator only)
-- **Fields**: Student, amount, payment date, mode, reference, status
-
-#### 3.3.2 Fee Tracking
-- **Outstanding Fees**: Track unpaid fees by student
-- **Payment History**: Complete payment history per student
-- **Reports**: Generate fee collection reports
-- **Analytics**: Fee collection trends and statistics
-
----
-
-## 4. Insurance Domain
-
-### 4.1 Insurer Management
-- **Create**: Add insurance companies with contact details
-- **Read**: View insurer list with search functionality
-- **Update**: Edit insurer information
-- **Delete**: Remove insurer records (Admin only)
-- **Fields**: Name, code, contact person, phone, email, address, status
-
-### 4.2 Policy Management
-- **Create**: Define insurance policies with coverage details
-- **Read**: View policy catalog with filtering
-- **Update**: Edit policy details
-- **Delete**: Remove policy records (Admin only)
-- **Fields**: Name, code, description, coverage, term, premium, frequency
-
-### 4.3 Customer Policy Assignment
-- **Create**: Assign policies to customers with specific terms
-- **Read**: View customer policy assignments
-- **Update**: Modify policy assignments
-- **Delete**: Remove policy assignments (Admin only)
-- **Fields**: Customer, policy, policy number, start/end dates, status, premium
-
-### 4.4 Policy Payment Processing
-- **Create**: Record premium payments with transaction details
-- **Read**: View payment history with filtering
-- **Update**: Edit payment records
-- **Delete**: Remove payment records (Admin only)
-- **Fields**: Transaction ID, amount, payment date, mode, reference, receipt
-
-### 4.5 Claims Management
-- **Create**: Submit insurance claims with supporting documents
-- **Read**: View claims with status filtering
-- **Update**: Process claims (status updates, approvals)
-- **Delete**: Remove claim records (Admin only)
-- **Fields**: Claim number, policy, amount claimed, amount approved, status, documents
-
----
-
-## 5. Business Rules
-
-### 5.1 Authentication Rules
-- Users must be authenticated to access the system
-- Session tokens expire after 7 days
-- Inactive users cannot access the system
-- Password must meet security requirements
-
-### 5.2 Data Validation Rules
-- Email addresses must be unique and valid format
-- Phone numbers must be in valid international format
-- Required fields cannot be empty
-- Date fields must be valid dates
-- Numeric fields must be positive values
-
-### 5.3 Insurance Business Rules
-- Policy numbers must be unique across the system
-- Premium amounts must be positive
-- Policy start date must be before end date
-- Payments only allowed for active policies
-- Claims follow defined lifecycle: draft → submitted → under review → approved/rejected → settled
-- Approved claim amounts cannot exceed claimed amounts
-
-### 5.4 Access Control Rules
-- Admin: Full system access
-- Moderator: Most operations, limited user management
-- Staff: View/create operations, limited edit permissions
-
----
-
-## 6. User Interface Design
-
-### 6.1 Layout Structure
+### **Module Structure**
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Header/Navigation                    │
-├─────────────────┬───────────────────────────────────────┤
-│                 │                                       │
-│    Sidebar      │           Main Content                │
-│   Navigation    │                                       │
-│                 │                                       │
-│                 │                                       │
-└─────────────────┴───────────────────────────────────────┘
-```
-
-### 6.2 Navigation Structure
-- **Dashboard**: Overview with KPIs and statistics
-- **Students**: Student management
-- **Teachers**: Teacher management
-- **Customers**: Customer management
-- **Transport**: Transport customer management
-- **Fees**: Fee management and tracking
-- **Reports**: Analytics and reporting
-- **Insurance Section**:
-  - Insurers
-  - Policies
-  - Customer Policies
-  - Policy Payments
-  - Claims
-  - Insurance Reports
-
-### 6.3 Common UI Components
-- **Data Tables**: Sortable, filterable, paginated
-- **Forms**: Validation, error handling, success feedback
-- **Modals**: Confirmation dialogs, form overlays
-- **Breadcrumbs**: Navigation context
-- **Search/Filter**: Advanced filtering capabilities
-- **Loading States**: User feedback during operations
-
----
-
-## 7. Data Model
-
-### 7.1 Core Entities
-```
-User {
-  _id: ObjectId
-  email: String (unique)
-  passwordHash: String
-  firstName: String
-  lastName: String
-  role: Enum [admin, moderator, staff]
-  isActive: Boolean
-  createdAt: Date
-  updatedAt: Date
-}
-
-Student {
-  _id: ObjectId
-  name: String
-  email: String
-  phone: String
-  address: String
-  enrollmentDate: Date
-  status: Enum [active, inactive]
-  createdAt: Date
-  updatedAt: Date
-  createdBy: ObjectId (ref: User)
-}
-```
-
-### 7.2 Insurance Entities
-```
-Insurer {
-  _id: ObjectId
-  name: String (unique)
-  code: String
-  contactPerson: String
-  phone: String
-  email: String
-  address: String
-  isActive: Boolean
-  createdAt: Date
-  updatedAt: Date
-}
-
-Policy {
-  _id: ObjectId
-  insurerId: ObjectId (ref: Insurer)
-  name: String
-  code: String
-  description: String
-  coverageDetails: String
-  termMonths: Number
-  premiumAmount: Number
-  premiumFrequency: Enum [monthly, quarterly, yearly]
-  minCoverAmount: Number
-  maxCoverAmount: Number
-  active: Boolean
-  createdAt: Date
-  updatedAt: Date
-}
-
-CustomerPolicy {
-  _id: ObjectId
-  policyId: ObjectId (ref: Policy)
-  insurerId: ObjectId (ref: Insurer)
-  customerId: ObjectId (ref: Customer)
-  insuredPersonId: ObjectId
-  insuredPersonModel: Enum [Customer, Student, Teacher]
-  policyNumber: String (unique)
-  startDate: Date
-  endDate: Date
-  status: Enum [active, lapsed, cancelled, expired]
-  sumInsured: Number
-  premium: Number
-  premiumFrequency: String
-  nextPremiumDueDate: Date
-  notes: String
-  createdAt: Date
-  updatedAt: Date
-  createdBy: ObjectId (ref: User)
-}
+Tuition Management System
+├── Tuition Module
+│   ├── Student Management
+│   ├── Teacher Management
+│   ├── Customer Management
+│   ├── Transport Management
+│   ├── Fee Management
+│   └── Reports & Analytics
+└── Insurance Module
+    ├── Insurer Management
+    ├── Policy Management
+    ├── Customer Policy Management
+    ├── Policy Payment Management
+    ├── Claims Management
+    └── Insurance Reports
 ```
 
 ---
 
-## 8. API Specifications
+## **👥 User Roles & Permissions**
 
-### 8.1 Authentication Endpoints
+### **Role Hierarchy**
 ```
-POST /api/auth/login
-- Body: { email, password }
-- Response: { success, token, user }
+Admin (Level 3)
+├── Full system access
+├── User management
+├── System settings
+└── Data backup/restore
 
-POST /api/auth/logout
-- Headers: Authorization: Bearer <token>
-- Response: { success, message }
+Moderator (Level 2)
+├── CRUD operations on all entities
+├── View reports
+└── Manage data (except users)
 
-GET /api/auth/me
-- Headers: Authorization: Bearer <token>
-- Response: { success, user }
-```
-
-### 8.2 Core Entity Endpoints
-```
-GET /api/students?page=1&limit=10&search=name
-POST /api/students
-GET /api/students/:id
-PUT /api/students/:id
-DELETE /api/students/:id
-
-GET /api/teachers?page=1&limit=10&search=name
-POST /api/teachers
-GET /api/teachers/:id
-PUT /api/teachers/:id
-DELETE /api/teachers/:id
+Staff (Level 1)
+├── View all data
+├── Create/Update records
+└── Limited delete permissions
 ```
 
-### 8.3 Insurance Endpoints
-```
-GET /api/insurers?page=1&limit=10&search=name
-POST /api/insurers
-GET /api/insurers/:id
-PUT /api/insurers/:id
-DELETE /api/insurers/:id
+### **Permission Matrix**
 
-GET /api/policies?page=1&limit=10&insurerId=xxx
-POST /api/policies
-GET /api/policies/:id
-PUT /api/policies/:id
-DELETE /api/policies/:id
-
-GET /api/customer-policies?page=1&limit=10&customerId=xxx
-POST /api/customer-policies
-GET /api/customer-policies/:id
-PUT /api/customer-policies/:id
-DELETE /api/customer-policies/:id
-
-GET /api/policy-payments?page=1&limit=10&customerPolicyId=xxx
-POST /api/policy-payments
-GET /api/policy-payments/:id
-PUT /api/policy-payments/:id
-DELETE /api/policy-payments/:id
-
-GET /api/claims?page=1&limit=10&status=submitted
-POST /api/claims
-GET /api/claims/:id
-PUT /api/claims/:id
-DELETE /api/claims/:id
-```
+| Feature | Admin | Moderator | Staff |
+|---------|-------|-----------|-------|
+| **User Management** | ✅ Full | ❌ None | ❌ None |
+| **Student CRUD** | ✅ Full | ✅ Full | ✅ Create/Update |
+| **Teacher CRUD** | ✅ Full | ✅ Full | ✅ Create/Update |
+| **Customer CRUD** | ✅ Full | ✅ Full | ✅ Create/Update |
+| **Fee Management** | ✅ Full | ✅ Full | ✅ Create/Update |
+| **Insurance CRUD** | ✅ Full | ✅ Full | ✅ Create/Update |
+| **Reports** | ✅ Full | ✅ Full | ✅ View Only |
+| **Settings** | ✅ Full | ❌ None | ❌ None |
+| **Backup/Restore** | ✅ Full | ❌ None | ❌ None |
 
 ---
 
-## 9. Security Requirements
+## **🎓 Tuition Module - Functional Requirements**
 
-### 9.1 Authentication Security
-- JWT tokens with secure secret
-- httpOnly cookies for token storage
-- Password hashing with bcryptjs (12 rounds)
-- Session timeout after 7 days
+### **1. Student Management**
 
-### 9.2 Authorization Security
-- Role-based access control (RBAC)
-- Permission checks on all operations
-- Resource-level access control
-- Admin-only operations protection
+#### **1.1 Student Registration**
+- **Functional Requirement**: System shall allow authorized users to register new students
+- **Input Fields**:
+  - First Name (Required, 2-50 characters)
+  - Last Name (Required, 2-50 characters)
+  - Date of Birth (Required, valid date)
+  - Gender (Required, Male/Female/Other)
+  - Class/Batch (Required, text)
+  - Parent Name (Required, 2-100 characters)
+  - Parent Phone (Required, valid phone format)
+  - Address (Required, 5-500 characters)
+  - Transport Opt-in (Boolean)
+  - Notes (Optional, 0-1000 characters)
+  - Status (Active/Inactive)
 
-### 9.3 Data Security
-- Input validation and sanitization
-- XSS prevention
-- CSRF protection
-- SQL injection prevention
-- ObjectId validation
+#### **1.2 Student Information Management**
+- **View Student Details**: Display complete student information
+- **Edit Student Information**: Update student details with validation
+- **Delete Student**: Soft delete with confirmation
+- **Duplicate Student**: Create copy of existing student record
 
-### 9.4 Audit Security
-- Activity logging for all operations
-- User action tracking
-- Data change audit trail
-- Error logging and monitoring
+#### **1.3 Student Search & Filtering**
+- **Search Criteria**:
+  - Name (first name, last name)
+  - Class/Batch
+  - Parent name
+  - Phone number
+- **Filter Options**:
+  - Status (Active/Inactive)
+  - Transport (Yes/No)
+  - Date range (registration date)
 
----
+#### **1.4 Student List Management**
+- **Pagination**: 10, 25, 50, 100 records per page
+- **Sorting**: By name, class, registration date
+- **Bulk Operations**: Export, duplicate multiple records
 
-## 10. Performance Requirements
+### **2. Teacher Management**
 
-### 10.1 Response Times
-- Page load: < 2 seconds
-- API response: < 500ms
-- Database queries: < 100ms
-- Search operations: < 1 second
+#### **2.1 Teacher Registration**
+- **Input Fields**:
+  - Name (Required, 2-100 characters)
+  - Email (Required, valid email format)
+  - Phone (Required, valid phone format)
+  - Subject (Required, text)
+  - Qualification (Required, text)
+  - Experience (Required, numeric)
+  - Address (Required, 5-500 characters)
+  - Joining Date (Required, valid date)
+  - Salary (Required, numeric > 0)
+  - Status (Active/Inactive)
 
-### 10.2 Scalability
-- Support 1000+ concurrent users
-- Handle 10,000+ records per entity
-- Efficient pagination for large datasets
-- Optimized database queries
+#### **2.2 Teacher Operations**
+- **CRUD Operations**: Create, Read, Update, Delete
+- **Search & Filter**: By name, subject, qualification, status
+- **Duplicate Functionality**: Copy teacher records
 
-### 10.3 Availability
-- 99.9% uptime target
-- Graceful error handling
-- Fallback mechanisms
-- Data backup and recovery
+### **3. Customer Management**
 
----
+#### **3.1 Customer Registration**
+- **Input Fields**:
+  - Name (Required, 2-100 characters)
+  - Phone (Required, valid phone format)
+  - Email (Optional, valid email format)
+  - Address (Required, 5-500 characters)
+  - Relation to Student (Required, text)
+  - Notes (Optional, 0-1000 characters)
+  - Status (Active/Inactive)
 
-## 11. Reporting and Analytics
+#### **3.2 Customer Operations**
+- **CRUD Operations**: Complete customer lifecycle management
+- **Relationship Management**: Link customers to students
+- **Communication Tracking**: Notes and interaction history
 
-### 11.1 Dashboard Metrics
-- Total students, teachers, customers
-- Fee collection statistics
-- Outstanding payments
-- Insurance policy statistics
-- Claims processing metrics
+### **4. Transport Customer Management**
 
-### 11.2 Financial Reports
-- Fee collection reports
-- Payment trends
-- Outstanding amounts
-- Revenue analytics
+#### **4.1 Transport Registration**
+- **Input Fields**:
+  - Name (Required, 2-100 characters)
+  - Phone (Required, valid phone format)
+  - Vehicle Number (Required, text)
+  - Pickup Point (Required, text)
+  - Drop Point (Required, text)
+  - Assigned Student (Optional, dropdown)
+  - Fee (Required, numeric > 0)
+  - Notes (Optional, 0-1000 characters)
+  - Status (Active/Inactive)
 
-### 11.3 Insurance Reports
-- Policy performance metrics
-- Claims processing statistics
-- Premium collection reports
-- Insurer performance analysis
+#### **4.2 Transport Operations**
+- **Route Management**: Define and manage transport routes
+- **Student Assignment**: Link students to transport services
+- **Fee Management**: Track transport fees
 
----
+### **5. Fee Management**
 
-## 12. Integration Requirements
+#### **5.1 Fee Collection**
+- **Input Fields**:
+  - Student (Required, dropdown)
+  - Fee Type (Required, dropdown)
+  - Amount (Required, numeric > 0)
+  - Due Date (Required, valid date)
+  - Payment Date (Optional, valid date)
+  - Payment Mode (Required, dropdown)
+  - Status (Paid/Pending/Overdue)
+  - Notes (Optional, 0-1000 characters)
 
-### 12.1 External Integrations
-- Email notifications (future)
-- SMS integration (future)
-- Payment gateway integration (future)
-- Document storage (future)
+#### **5.2 Fee Tracking**
+- **Payment Status**: Track payment status in real-time
+- **Overdue Management**: Identify and manage overdue payments
+- **Receipt Generation**: Generate payment receipts
+- **Fee Reports**: Comprehensive fee collection reports
 
-### 12.2 Data Export/Import
-- CSV export functionality
-- Excel export capability
-- Data backup and restore
-- Bulk import operations
-
----
-
-## 13. Testing Requirements
-
-### 13.1 Unit Testing
-- Component testing with React Testing Library
-- Utility function testing
-- Validation function testing
-- API route testing
-
-### 13.2 Integration Testing
-- Authentication flow testing
-- CRUD operation testing
-- Business rule validation testing
-- Error handling testing
-
-### 13.3 User Acceptance Testing
-- End-to-end user workflows
-- Cross-browser compatibility
-- Mobile responsiveness
-- Performance testing
-
----
-
-## 14. Deployment and Maintenance
-
-### 14.1 Deployment
-- Production-ready build process
-- Environment configuration
-- Database migration scripts
-- Security configuration
-
-### 14.2 Maintenance
-- Regular security updates
-- Performance monitoring
-- Database optimization
-- User feedback collection
+#### **5.3 Fee Analytics**
+- **Collection Reports**: Monthly, quarterly, yearly reports
+- **Outstanding Reports**: Pending and overdue fee reports
+- **Payment Trends**: Payment pattern analysis
 
 ---
 
-## 15. Future Enhancements
+## **🛡️ Insurance Module - Functional Requirements**
 
-### 15.1 Planned Features
-- Email notifications for premium due dates
-- SMS integration for reminders
-- Advanced reporting with charts
-- Mobile app development
-- API rate limiting
-- Multi-language support
+### **1. Insurer Management**
 
-### 15.2 Scalability Improvements
-- Microservices architecture
-- Caching layer implementation
-- CDN integration
-- Load balancing
-- Database sharding
+#### **1.1 Insurer Registration**
+- **Input Fields**:
+  - Name (Required, 2-100 characters)
+  - Code (Required, 2-20 characters, unique)
+  - Contact Person (Required, 2-100 characters)
+  - Phone (Required, valid phone format)
+  - Email (Required, valid email format)
+  - Address (Required, 5-500 characters)
+  - Website (Optional, valid URL)
+  - License Number (Required, text)
+  - Status (Active/Inactive)
+
+#### **1.2 Insurer Operations**
+- **CRUD Operations**: Complete insurer lifecycle management
+- **Policy Association**: Link insurers to policies
+- **Performance Tracking**: Track insurer performance metrics
+
+### **2. Policy Management**
+
+#### **2.1 Policy Creation**
+- **Input Fields**:
+  - Insurer (Required, dropdown)
+  - Policy Name (Required, 2-200 characters)
+  - Policy Number (Auto-generated, unique)
+  - Premium Amount (Required, numeric > 0)
+  - Premium Frequency (Monthly/Quarterly/Yearly)
+  - Min Cover Amount (Required, numeric > 0)
+  - Max Cover Amount (Required, numeric > 0)
+  - Description (Optional, 0-2000 characters)
+  - Terms & Conditions (Optional, 0-5000 characters)
+  - Status (Active/Inactive)
+
+#### **2.2 Policy Operations**
+- **Policy Lifecycle**: Create, activate, modify, deactivate
+- **Coverage Management**: Define coverage limits and terms
+- **Premium Calculation**: Automatic premium calculations
+
+### **3. Customer Policy Management**
+
+#### **3.1 Policy Assignment**
+- **Input Fields**:
+  - Customer (Required, dropdown)
+  - Policy (Required, dropdown)
+  - Start Date (Required, valid date)
+  - End Date (Required, valid date)
+  - Premium Amount (Required, numeric > 0)
+  - Payment Frequency (Monthly/Quarterly/Yearly)
+  - Next Premium Due (Auto-calculated)
+  - Status (Active/Lapsed/Cancelled/Expired)
+
+#### **3.2 Policy Tracking**
+- **Status Management**: Track policy status changes
+- **Renewal Management**: Handle policy renewals
+- **Coverage Tracking**: Monitor coverage periods
+
+### **4. Policy Payment Management**
+
+#### **4.1 Payment Processing**
+- **Input Fields**:
+  - Customer Policy (Required, dropdown)
+  - Amount (Required, numeric > 0)
+  - Payment Date (Required, valid date)
+  - Payment Mode (Cash/Cheque/Online/Bank Transfer)
+  - Transaction ID (Required, unique)
+  - Receipt Number (Auto-generated)
+  - Notes (Optional, 0-1000 characters)
+
+#### **4.2 Payment Tracking**
+- **Payment History**: Complete payment history
+- **Outstanding Tracking**: Track pending payments
+- **Receipt Management**: Generate and manage receipts
+
+### **5. Claims Management**
+
+#### **5.1 Claim Submission**
+- **Input Fields**:
+  - Customer Policy (Required, dropdown)
+  - Claim Number (Auto-generated, unique)
+  - Date of Event (Required, valid date)
+  - Amount Claimed (Required, numeric > 0)
+  - Amount Approved (Optional, numeric)
+  - Status (Draft/Submitted/Under Review/Approved/Rejected/Settled)
+  - Description (Required, 10-2000 characters)
+  - Supporting Documents (Optional, file upload)
+
+#### **5.2 Claim Processing**
+- **Status Workflow**: Draft → Submitted → Under Review → Approved/Rejected → Settled
+- **Document Management**: Upload and manage supporting documents
+- **Approval Process**: Multi-level approval workflow
 
 ---
 
-## 16. Conclusion
+## **📊 Reporting & Analytics**
 
-The Tuition Management System with Insurance Domain provides a comprehensive solution for managing educational institutions with integrated insurance services. The system is designed with modern technologies, robust security, and scalable architecture to meet current and future requirements.
+### **1. Tuition Reports**
 
-**Key Achievements:**
-- ✅ Complete CRUD operations for all entities
-- ✅ Role-based access control implementation
-- ✅ Comprehensive insurance domain integration
-- ✅ Advanced reporting and analytics
-- ✅ Production-ready security measures
-- ✅ Responsive and user-friendly interface
+#### **1.1 Student Reports**
+- **Student List**: Complete student directory
+- **Class-wise Reports**: Students by class/batch
+- **Transport Reports**: Students using transport services
+- **Status Reports**: Active/inactive student reports
 
-**System Status:** Production Ready ✅
+#### **1.2 Fee Reports**
+- **Collection Reports**: Daily, monthly, yearly collection
+- **Outstanding Reports**: Pending and overdue fees
+- **Payment Trends**: Payment pattern analysis
+- **Revenue Reports**: Income and revenue tracking
+
+#### **1.3 Teacher Reports**
+- **Teacher Directory**: Complete teacher information
+- **Subject-wise Reports**: Teachers by subject
+- **Performance Reports**: Teacher performance metrics
+
+### **2. Insurance Reports**
+
+#### **2.1 Policy Reports**
+- **Policy Summary**: Active, lapsed, cancelled policies
+- **Premium Reports**: Premium collection and outstanding
+- **Coverage Reports**: Coverage analysis and trends
+
+#### **2.2 Claims Reports**
+- **Claims Summary**: Claims by status and amount
+- **Settlement Reports**: Claims settlement analysis
+- **Performance Reports**: Insurer performance metrics
 
 ---
 
-*Document Version: 1.0*  
-*Last Updated: October 2, 2024*  
-*Total Pages: 16*  
-*Status: Approved for Production*
+## **🔐 Security Requirements**
+
+### **1. Authentication**
+- **JWT-based Authentication**: Secure token-based authentication
+- **Session Management**: 7-day token expiration
+- **Password Security**: bcrypt hashing with salt rounds
+
+### **2. Authorization**
+- **Role-based Access Control**: Admin, Moderator, Staff roles
+- **Permission Matrix**: Granular permission system
+- **Route Protection**: Protected routes and API endpoints
+
+### **3. Data Security**
+- **Input Validation**: Client and server-side validation
+- **XSS Protection**: Cross-site scripting prevention
+- **CSRF Protection**: Cross-site request forgery prevention
+- **SQL Injection Protection**: MongoDB injection prevention
+
+---
+
+## **📱 User Interface Requirements**
+
+### **1. Design Principles**
+- **Responsive Design**: Mobile-first approach
+- **Accessibility**: WCAG 2.1 compliance
+- **Consistency**: Uniform design language
+- **Usability**: Intuitive user experience
+
+### **2. Navigation**
+- **Sidebar Navigation**: Collapsible sidebar with module organization
+- **Breadcrumb Navigation**: Clear navigation path
+- **Search Functionality**: Global and entity-specific search
+- **Quick Actions**: Shortcut buttons for common actions
+
+### **3. Forms & Input**
+- **Form Validation**: Real-time validation feedback
+- **Error Handling**: Clear error messages and recovery
+- **Loading States**: Visual feedback during operations
+- **Success Feedback**: Confirmation of successful operations
+
+---
+
+## **⚡ Performance Requirements**
+
+### **1. Response Times**
+- **Page Load**: < 2 seconds
+- **API Response**: < 500ms
+- **Search Results**: < 1 second
+- **Report Generation**: < 5 seconds
+
+### **2. Scalability**
+- **Concurrent Users**: Support 100+ concurrent users
+- **Data Volume**: Handle 10,000+ records per entity
+- **File Uploads**: Support up to 10MB file uploads
+- **Database Performance**: Optimized queries with indexes
+
+---
+
+## **🔄 Integration Requirements**
+
+### **1. External Integrations**
+- **WhatsApp Integration**: Send notifications via WhatsApp
+- **Email Integration**: Email notifications and reports
+- **SMS Integration**: SMS notifications (future)
+- **Payment Gateway**: Online payment integration (future)
+
+### **2. Data Import/Export**
+- **Excel Import**: Bulk data import from Excel
+- **CSV Export**: Data export in CSV format
+- **PDF Reports**: Generate PDF reports
+- **Backup/Restore**: Complete data backup and restore
+
+---
+
+## **📋 Business Rules**
+
+### **1. Data Validation Rules**
+- **Required Fields**: All mandatory fields must be filled
+- **Format Validation**: Email, phone, date format validation
+- **Range Validation**: Numeric ranges and limits
+- **Uniqueness**: Unique constraints on key fields
+
+### **2. Business Logic Rules**
+- **Fee Calculation**: Automatic fee calculation based on rules
+- **Policy Renewal**: Automatic policy renewal notifications
+- **Status Transitions**: Valid status transition rules
+- **Approval Workflows**: Multi-level approval processes
+
+### **3. Audit Requirements**
+- **Activity Logging**: All user actions logged
+- **Data Changes**: Track all data modifications
+- **User Tracking**: Track user sessions and activities
+- **Compliance**: Meet data protection requirements
+
+---
+
+## **🎯 Success Criteria**
+
+### **1. Functional Success**
+- ✅ All CRUD operations working correctly
+- ✅ Role-based access control implemented
+- ✅ Reports generating accurately
+- ✅ Data validation working properly
+
+### **2. Performance Success**
+- ✅ Page load times under 2 seconds
+- ✅ API response times under 500ms
+- ✅ System handling 100+ concurrent users
+- ✅ Database queries optimized
+
+### **3. User Experience Success**
+- ✅ Intuitive navigation and user interface
+- ✅ Responsive design across all devices
+- ✅ Clear error messages and feedback
+- ✅ Consistent user experience
+
+---
+
+## **📝 Appendices**
+
+### **A. Glossary**
+- **CRUD**: Create, Read, Update, Delete operations
+- **RBAC**: Role-Based Access Control
+- **JWT**: JSON Web Token
+- **API**: Application Programming Interface
+- **UI/UX**: User Interface/User Experience
+
+### **B. References**
+- Next.js Documentation
+- MongoDB Documentation
+- React Documentation
+- Tailwind CSS Documentation
+
+---
+
+*This Functional Design Document serves as the comprehensive guide for the Tuition Management System's functionality and requirements.*
