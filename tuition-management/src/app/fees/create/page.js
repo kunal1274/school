@@ -17,6 +17,7 @@ export default function CreateFeePage() {
   const [payers, setPayers] = useState([]);
   const [loadingPayers, setLoadingPayers] = useState(false);
   const [payersError, setPayersError] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [formData, setFormData] = useState({
     payerType: '',
     payerId: '',
@@ -26,7 +27,8 @@ export default function CreateFeePage() {
     payeeName: '',
     payeePhone: '',
     reference: '',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    status: 'paid'
   });
 
   const payerTypeOptions = [
@@ -49,6 +51,12 @@ export default function CreateFeePage() {
     { value: 'INR', label: 'INR (₹)' },
     { value: 'USD', label: 'USD ($)' },
     { value: 'EUR', label: 'EUR (€)' }
+  ];
+
+  const statusOptions = [
+    { value: 'paid', label: 'Paid' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'overdue', label: 'Overdue' }
   ];
 
   const fetchPayers = async (payerType) => {
@@ -152,7 +160,7 @@ export default function CreateFeePage() {
       const data = await response.json();
 
       if (response.ok) {
-        alert('Success', 'Fee record created successfully!', 'success');
+        setShowSuccessModal(true);
         setTimeout(() => {
           router.push('/fees');
         }, 1500);
@@ -310,6 +318,17 @@ export default function CreateFeePage() {
                 />
               </div>
 
+              {/* Status */}
+              <div>
+                <FormSelect
+                  label="Status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  options={statusOptions}
+                />
+              </div>
+
               {/* Mode of Payment */}
               <div>
                 <FormSelect
@@ -398,6 +417,29 @@ export default function CreateFeePage() {
             </div>
           </form>
         </div>
+
+        {/* Success Modal Overlay */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 transform animate-fadeIn">
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6 animate-bounce">
+                  <svg className="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">🎉 Success!</h3>
+                <p className="text-gray-600 mb-6 text-lg">
+                  Fee record has been created successfully!
+                </p>
+                <div className="flex items-center justify-center space-x-3 text-sm text-gray-600 bg-green-50 rounded-lg p-4 border border-green-200">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500"></div>
+                  <span className="font-medium">Redirecting to fees list...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <DialogComponent />
           </div>

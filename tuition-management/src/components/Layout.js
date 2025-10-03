@@ -12,10 +12,20 @@ const navigation = [
   { name: 'Customers', href: '/customers', icon: '👥' },
   { name: 'Transport', href: '/transport-customers', icon: '🚌' },
   { name: 'Fees', href: '/fees', icon: '💰' },
+  { name: 'Reports', href: '/fees/reports', icon: '📈' },
+  // Insurance section
+  { name: 'Insurers', href: '/insurers', icon: '🏢' },
+  { name: 'Policies', href: '/policies', icon: '📋' },
+  { name: 'Customer Policies', href: '/customer-policies', icon: '📄' },
+  { name: 'Policy Payments', href: '/policy-payments', icon: '💳' },
+  { name: 'Claims', href: '/claims', icon: '⚖️' },
+  { name: 'Insurance Reports', href: '/insurance/reports', icon: '📊' },
 ];
 
 const adminNavigation = [
   { name: 'Users', href: '/users', icon: '👤' },
+  { name: 'Activity Logs', href: '/activity-logs', icon: '📋' },
+  { name: 'Backup & Restore', href: '/backup-restore', icon: '💾' },
   { name: 'Settings', href: '/settings', icon: '⚙️' },
 ];
 
@@ -66,7 +76,15 @@ export default function Layout({ children }) {
     router.push('/login');
   };
 
-  const isActive = (href) => pathname === href || pathname.startsWith(href + '/');
+  const isActive = (href) => {
+    if (pathname === href) return true;
+    // Special case for fees - only match exact path, not sub-paths
+    if (href === '/fees') {
+      return pathname === '/fees';
+    }
+    // For other paths, allow sub-paths
+    return pathname.startsWith(href + '/');
+  };
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);

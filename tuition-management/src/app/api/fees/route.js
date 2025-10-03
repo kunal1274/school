@@ -151,7 +151,8 @@ export const POST = withAuth(async (req, context) => {
       payeeName: data.payeeName,
       payeePhone: data.payeePhone,
       reference: data.reference || '',
-      date: new Date(data.date)
+      date: new Date(data.date),
+      status: data.status || 'paid' // Default to 'paid' since it's a fee record
     };
 
     addAuditFields(feeData, req.user._id);

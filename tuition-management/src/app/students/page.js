@@ -6,11 +6,13 @@ import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import { useConfirmationDialog } from '@/components/CustomDialog';
+import DuplicateRecord, { useDuplicateRecord } from '@/components/DuplicateRecord';
 import Link from 'next/link';
 
 export default function StudentsPage() {
   const { user } = useAuth();
   const { confirm, alert, DialogComponent } = useConfirmationDialog();
+  const { duplicateRecord } = useDuplicateRecord('Student');
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
@@ -261,6 +263,11 @@ export default function StudentsPage() {
                             >
                               Edit
                             </Link>
+                            <DuplicateRecord
+                              record={student}
+                              recordType="Student"
+                              onDuplicate={duplicateRecord}
+                            />
                             <WhatsAppButton
                               phone={student.parentPhone}
                               name={`${student.firstName} ${student.lastName}`}

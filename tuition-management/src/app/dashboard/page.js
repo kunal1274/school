@@ -14,7 +14,14 @@ export default function DashboardPage() {
     customers: 0,
     transportCustomers: 0,
     totalFees: 0,
-    recentFees: []
+    paidFees: 0,
+    pendingFees: 0,
+    overdueFees: 0,
+    collectionRate: 0,
+    recentFees: [],
+    monthlyRevenue: 0,
+    activeStudents: 0,
+    inactiveStudents: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -41,15 +48,56 @@ export default function DashboardPage() {
         feesRes.json()
       ]);
 
-      // Calculate total fees amount
+      // Calculate comprehensive fee statistics
       let totalFeesAmount = 0;
+      let paidFeesAmount = 0;
+      let pendingFeesAmount = 0;
+      let overdueFeesAmount = 0;
+      let monthlyRevenue = 0;
+      let activeStudents = 0;
+      let inactiveStudents = 0;
+
       if (fees.success && fees.data) {
         const allFeesRes = await fetch('/api/fees?limit=1000', { credentials: 'include' });
         const allFees = await allFeesRes.json();
         if (allFees.success) {
-          totalFeesAmount = allFees.data.reduce((sum, fee) => sum + fee.amount, 0);
+          const currentMonth = new Date().toISOString().substring(0, 7);
+          
+          allFees.data.forEach(fee => {
+            totalFeesAmount += fee.amount || 0;
+            
+            switch (fee.status) {
+              case 'paid':
+                paidFeesAmount += fee.amount || 0;
+                if (fee.date && fee.date.startsWith(currentMonth)) {
+                  monthlyRevenue += fee.amount || 0;
+                }
+                break;
+              case 'pending':
+                pendingFeesAmount += fee.amount || 0;
+                break;
+              case 'overdue':
+                overdueFeesAmount += fee.amount || 0;
+                break;
+            }
+          });
         }
       }
+
+      // Get student status counts
+      const allStudentsRes = await fetch('/api/students?limit=1000', { credentials: 'include' });
+      const allStudents = await allStudentsRes.json();
+      if (allStudents.success) {
+        allStudents.data.forEach(student => {
+          if (student.status === 'active') {
+            activeStudents++;
+          } else {
+            inactiveStudents++;
+          }
+        });
+      }
+
+      const collectionRate = totalFeesAmount > 0 ? ((paidFeesAmount / totalFeesAmount) * 100).toFixed(1) : 0;
 
       setStats({
         students: students.success ? students.pagination?.total || 0 : 0,
@@ -57,6 +105,13 @@ export default function DashboardPage() {
         customers: customers.success ? customers.pagination?.total || 0 : 0,
         transportCustomers: transport.success ? transport.pagination?.total || 0 : 0,
         totalFees: totalFeesAmount,
+        paidFees: paidFeesAmount,
+        pendingFees: pendingFeesAmount,
+        overdueFees: overdueFeesAmount,
+        collectionRate: parseFloat(collectionRate),
+        monthlyRevenue: monthlyRevenue,
+        activeStudents: activeStudents,
+        inactiveStudents: inactiveStudents,
         recentFees: fees.success ? fees.data || [] : []
       });
     } catch (error) {
@@ -66,7 +121,7 @@ export default function DashboardPage() {
     }
   };
 
-  const StatCard = ({ title, value, icon, color = 'orange' }) => (
+  const StatCard = ({ title, value, icon, color = 'orange', subtitle }) => (
     <div className="bg-white rounded-lg shadow-soft p-6">
       <div className="flex items-center">
         <div className={`flex-shrink-0 p-3 rounded-lg bg-${color}-100`}>
@@ -75,8 +130,11 @@ export default function DashboardPage() {
         <div className="ml-4">
           <p className="text-sm font-medium text-gray-600">{title}</p>
           <p className={`text-2xl font-bold text-${color}-600`}>
-            {loading ? '...' : typeof value === 'number' && title.includes('Fees') ? `₹${value.toLocaleString()}` : value}
+            {loading ? '...' : value}
           </p>
+          {subtitle && (
+            <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+          )}
         </div>
       </div>
     </div>
@@ -92,13 +150,14 @@ export default function DashboardPage() {
             <p className="text-gray-600">Welcome back, {user?.name}!</p>
           </div>
 
-          {/* Stats Grid */}
+          {/* Primary Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
               title="Total Students"
               value={stats.students}
               icon="👨‍🎓"
               color="orange"
+              subtitle={`${stats.activeStudents} active, ${stats.inactiveStudents} inactive`}
             />
             <StatCard
               title="Total Teachers"
@@ -120,48 +179,90 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Additional Stats */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Financial Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
-              title="Total Fees Collected"
-              value={stats.totalFees}
+              title="Total Revenue"
+              value={`₹${stats.totalFees.toLocaleString()}`}
               icon="💰"
               color="green"
             />
-            <div className="bg-white rounded-lg shadow-soft p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Quick Actions</h3>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Link
-                  href="/students/create"
-                  className="flex items-center justify-center px-4 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
-                >
-                  <span className="mr-2">👨‍🎓</span>
-                  Add Student
-                </Link>
-                <Link
-                  href="/teachers/create"
-                  className="flex items-center justify-center px-4 py-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
-                >
-                  <span className="mr-2">👩‍🏫</span>
-                  Add Teacher
-                </Link>
-                <Link
-                  href="/fees/create"
-                  className="flex items-center justify-center px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-                >
-                  <span className="mr-2">💰</span>
-                  Add Fee
-                </Link>
-                <Link
-                  href="/customers/create"
-                  className="flex items-center justify-center px-4 py-3 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
-                >
-                  <span className="mr-2">👥</span>
-                  Add Customer
-                </Link>
-              </div>
+            <StatCard
+              title="Monthly Revenue"
+              value={`₹${stats.monthlyRevenue.toLocaleString()}`}
+              icon="📈"
+              color="blue"
+            />
+            <StatCard
+              title="Collection Rate"
+              value={`${stats.collectionRate}%`}
+              icon="📊"
+              color="orange"
+            />
+            <StatCard
+              title="Pending Amount"
+              value={`₹${stats.pendingFees.toLocaleString()}`}
+              icon="⏳"
+              color="yellow"
+            />
+          </div>
+
+          {/* Fee Status Overview */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <StatCard
+              title="Paid Fees"
+              value={`₹${stats.paidFees.toLocaleString()}`}
+              icon="✅"
+              color="green"
+            />
+            <StatCard
+              title="Pending Fees"
+              value={`₹${stats.pendingFees.toLocaleString()}`}
+              icon="⏳"
+              color="yellow"
+            />
+            <StatCard
+              title="Overdue Fees"
+              value={`₹${stats.overdueFees.toLocaleString()}`}
+              icon="⚠️"
+              color="red"
+            />
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-white rounded-lg shadow-soft p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Quick Actions</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                href="/students/create"
+                className="flex items-center justify-center px-4 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
+              >
+                <span className="mr-2">👨‍🎓</span>
+                Add Student
+              </Link>
+              <Link
+                href="/teachers/create"
+                className="flex items-center justify-center px-4 py-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+              >
+                <span className="mr-2">👩‍🏫</span>
+                Add Teacher
+              </Link>
+              <Link
+                href="/fees/create"
+                className="flex items-center justify-center px-4 py-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+              >
+                <span className="mr-2">💰</span>
+                Add Fee
+              </Link>
+              <Link
+                href="/customers/create"
+                className="flex items-center justify-center px-4 py-3 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
+              >
+                <span className="mr-2">👥</span>
+                Add Customer
+              </Link>
             </div>
           </div>
 

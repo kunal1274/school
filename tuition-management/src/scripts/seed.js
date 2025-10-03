@@ -258,6 +258,7 @@ async function seedDatabase() {
         payeePhone: '+91-9876543213',
         reference: 'Monthly tuition fee - October 2024',
         date: new Date('2024-10-01'),
+        status: 'paid',
         createdBy: adminId,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -273,6 +274,7 @@ async function seedDatabase() {
         payeePhone: '+91-9876543214',
         reference: 'Monthly tuition fee - October 2024',
         date: new Date('2024-10-02'),
+        status: 'pending',
         createdBy: adminId,
         createdAt: new Date(),
         updatedAt: new Date()
@@ -288,6 +290,7 @@ async function seedDatabase() {
         payeePhone: '+91-9876543220',
         reference: 'Monthly transport fee - October 2024',
         date: new Date('2024-10-03'),
+        status: 'paid',
         createdBy: adminId,
         createdAt: new Date(),
         updatedAt: new Date()

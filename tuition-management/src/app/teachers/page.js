@@ -5,10 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import DuplicateRecord, { useDuplicateRecord } from '@/components/DuplicateRecord';
 import Link from 'next/link';
 
 export default function TeachersPage() {
   const { user } = useAuth();
+  const { duplicateRecord } = useDuplicateRecord('Teacher');
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
@@ -251,6 +253,11 @@ export default function TeachersPage() {
                             >
                               Edit
                             </Link>
+                            <DuplicateRecord
+                              record={teacher}
+                              recordType="Teacher"
+                              onDuplicate={duplicateRecord}
+                            />
                             {teacher.phone && (
                               <WhatsAppButton
                                 phone={teacher.phone}

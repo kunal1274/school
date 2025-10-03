@@ -6,11 +6,13 @@ import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import { useConfirmationDialog } from '@/components/CustomDialog';
+import DuplicateRecord, { useDuplicateRecord } from '@/components/DuplicateRecord';
 import Link from 'next/link';
 
 export default function FeesPage() {
   const { user } = useAuth();
   const { confirm, alert, DialogComponent } = useConfirmationDialog();
+  const { duplicateRecord } = useDuplicateRecord('Fee');
   const [fees, setFees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
@@ -269,6 +271,11 @@ export default function FeesPage() {
                             >
                               Edit
                             </Link>
+                            <DuplicateRecord
+                              record={fee}
+                              recordType="Fee"
+                              onDuplicate={duplicateRecord}
+                            />
                             <WhatsAppButton
                               phone={fee.payeePhone}
                               name={fee.payeeName}

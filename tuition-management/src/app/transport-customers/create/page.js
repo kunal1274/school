@@ -14,8 +14,7 @@ export default function CreateTransportCustomerPage() {
   const router = useRouter();
   const { alert, DialogComponent } = useConfirmationDialog();
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [apiComplete, setApiComplete] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -39,7 +38,6 @@ export default function CreateTransportCustomerPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setApiComplete(false);
 
     try {
       const response = await fetch('/api/transport-customers', {
@@ -53,22 +51,18 @@ export default function CreateTransportCustomerPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setSubmitted(true);
-        setApiComplete(true);
         setLoading(false);
-        alert('Success', 'Transport customer created successfully!', 'success');
+        setShowSuccessModal(true);
         setTimeout(() => {
           router.push('/transport-customers');
-        }, 2000);
+        }, 1500);
       } else {
         setLoading(false);
-        setApiComplete(true);
         alert('Error', data.error || 'Failed to create transport customer', 'error');
       }
     } catch (error) {
       console.error('Error creating transport customer:', error);
       setLoading(false);
-      setApiComplete(true);
       alert('Error', 'Network error while creating transport customer', 'error');
     }
   };
@@ -117,59 +111,8 @@ export default function CreateTransportCustomerPage() {
           </p>
         </div>
 
-        {/* Success Screen */}
-        {submitted && (
-          <div className="bg-white shadow-xl rounded-xl border-2 border-green-200 animate-fadeIn">
-            <div className="p-10 text-center">
-              <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-8 animate-bounce">
-                <svg className="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">🎉 Transport Customer Created Successfully!</h3>
-              <p className="text-gray-600 mb-8 text-lg">
-                The transport customer <span className="font-semibold text-green-700">&quot;{formData.name}&quot;</span> has been added to the system.
-              </p>
-              <div className="space-y-6">
-                <div className="flex items-center justify-center space-x-3 text-sm text-gray-600 bg-green-50 rounded-lg p-4 border border-green-200">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500"></div>
-                  <span className="font-medium">Redirecting to transport customers list in a moment...</span>
-                </div>
-                <div className="flex justify-center space-x-4">
-                  <button
-                    onClick={() => router.push('/transport-customers')}
-                    className="px-8 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium shadow-lg"
-                  >
-                    Go to Transport Customers List
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSubmitted(false);
-                      setFormData({
-                        name: '',
-                        phone: '',
-                        vehicleNo: '',
-                        pickupPoint: '',
-                        dropPoint: '',
-                        assignedToStudentId: '',
-                        fee: '',
-                        notes: '',
-                        status: 'active'
-                      });
-                    }}
-                    className="px-8 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                  >
-                    Create Another
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Form */}
-        {!submitted && (
-          <div className="bg-white shadow rounded-lg relative">
+        <div className="bg-white shadow rounded-lg relative">
             {loading && (
               <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-20 rounded-lg">
                 <div className="text-center">
@@ -309,6 +252,28 @@ export default function CreateTransportCustomerPage() {
             </div>
           </form>
         </div>
+
+        {/* Success Modal Overlay */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 transform animate-fadeIn">
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6 animate-bounce">
+                  <svg className="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">🎉 Success!</h3>
+                <p className="text-gray-600 mb-6 text-lg">
+                  Transport customer <span className="font-semibold text-green-700">&quot;{formData.name}&quot;</span> has been created successfully!
+                </p>
+                <div className="flex items-center justify-center space-x-3 text-sm text-gray-600 bg-green-50 rounded-lg p-4 border border-green-200">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500"></div>
+                  <span className="font-medium">Redirecting to transport customers list...</span>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         <DialogComponent />

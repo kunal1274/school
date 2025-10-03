@@ -28,6 +28,7 @@ export default function CreateStudentPage() {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -63,7 +64,7 @@ export default function CreateStudentPage() {
       const data = await response.json();
 
       if (response.ok) {
-        alert('Success', 'Student created successfully!', 'success');
+        setShowSuccessModal(true);
         setTimeout(() => {
           router.push('/students');
         }, 1500);
@@ -274,6 +275,30 @@ export default function CreateStudentPage() {
             </div>
           </form>
         </div>
+
+        {/* Success Modal Overlay */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 transform animate-fadeIn">
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6 animate-bounce">
+                  <svg className="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">🎉 Success!</h3>
+                <p className="text-gray-600 mb-6 text-lg">
+                  Student <span className="font-semibold text-green-700">&quot;{formData.firstName} {formData.lastName}&quot;</span> has been created successfully!
+                </p>
+                <div className="flex items-center justify-center space-x-3 text-sm text-gray-600 bg-green-50 rounded-lg p-4 border border-green-200">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500"></div>
+                  <span className="font-medium">Redirecting to students list...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <DialogComponent />
       </Layout>
     </ProtectedRoute>

@@ -13,7 +13,13 @@ export const COLLECTIONS = {
   CUSTOMERS: 'customers',
   TRANSPORT_CUSTOMERS: 'transport_customers',
   FEES: 'fees',
-  ACTIVITY_LOGS: 'activity_logs'
+  ACTIVITY_LOGS: 'activity_logs',
+  // Insurance collections
+  INSURERS: 'insurers',
+  POLICIES: 'policies',
+  CUSTOMER_POLICIES: 'customer_policies',
+  POLICY_PAYMENTS: 'policy_payments',
+  CLAIMS: 'claims'
 };
 
 // User roles
@@ -44,6 +50,57 @@ export const PAYMENT_MODES = {
 export const STATUS_TYPES = {
   ACTIVE: 'active',
   INACTIVE: 'inactive'
+};
+
+// Insurance-specific constants
+export const INSURANCE_CONSTANTS = {
+  // Policy status
+  POLICY_STATUS: {
+    ACTIVE: 'active',
+    LAPSED: 'lapsed',
+    CANCELLED: 'cancelled',
+    EXPIRED: 'expired'
+  },
+  
+  // Premium frequency
+  PREMIUM_FREQUENCY: {
+    MONTHLY: 'monthly',
+    QUARTERLY: 'quarterly',
+    YEARLY: 'yearly'
+  },
+  
+  // Claim status
+  CLAIM_STATUS: {
+    DRAFT: 'draft',
+    SUBMITTED: 'submitted',
+    UNDER_REVIEW: 'under_review',
+    APPROVED: 'approved',
+    REJECTED: 'rejected',
+    SETTLED: 'settled'
+  },
+  
+  // Insured person types
+  INSURED_PERSON_TYPES: {
+    CUSTOMER: 'Customer',
+    STUDENT: 'Student',
+    TEACHER: 'Teacher'
+  },
+  
+  // Payment modes (reuse existing)
+  POLICY_PAYMENT_MODES: {
+    CASH: 'cash',
+    UPI: 'upi',
+    CARD: 'card',
+    BANK_TRANSFER: 'bank_transfer',
+    OTHER: 'other'
+  },
+  
+  // Currencies
+  CURRENCIES: {
+    INR: 'INR',
+    USD: 'USD',
+    EUR: 'EUR'
+  }
 };
 
 // Activity log actions
