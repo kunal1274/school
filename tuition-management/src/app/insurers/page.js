@@ -50,9 +50,9 @@ export default function InsurersPage() {
       } else {
         setError(data.error || 'Failed to fetch insurers');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error fetching insurers:', error);
       setError('Failed to fetch insurers');
-      console.error('Error fetching insurers:', err);
     } finally {
       setLoading(false);
     }
@@ -62,62 +62,56 @@ export default function InsurersPage() {
     fetchInsurers();
   }, [filters]);
 
-  // Handle filter changes
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
       ...prev,
       [key]: value,
-      page: 1 // Reset to first page when filters change
+      page: 1 // Reset to first page when filtering
     }));
   };
 
-  // Handle pagination
   const handlePageChange = (newPage) => {
-    setFilters(prev => ({ ...prev, page: newPage }));
+    setFilters(prev => ({
+      ...prev,
+      page: newPage
+    }));
   };
 
-  // Handle delete
-  const handleDelete = async (insurer) => {
+  const handleDelete = async (insurerId, insurerName) => {
     const confirmed = await showConfirmation(
       'Delete Insurer',
-      `Are you sure you want to delete "${insurer.name}"? This action cannot be undone.`
+      `Are you sure you want to delete ${insurerName}? This action cannot be undone.`
     );
 
     if (confirmed) {
       try {
-        const response = await fetch(`/api/insurers/${insurer._id}`, {
-          method: 'DELETE'
+        const response = await fetch(`/api/insurers/${insurerId}`, {
+          method: 'DELETE',
         });
 
-        const data = await response.json();
-
-        if (data.success) {
-          fetchInsurers(); // Refresh the list
+        if (response.ok) {
+          await fetchInsurers(); // Refresh the list
         } else {
-          setError(data.error || 'Failed to delete insurer');
+          const errorData = await response.json();
+          alert('Error', errorData.error || 'Failed to delete insurer');
         }
-      } catch (err) {
-        setError('Failed to delete insurer');
-        console.error('Error deleting insurer:', err);
+      } catch (error) {
+        console.error('Error deleting insurer:', error);
+        alert('Error', 'Failed to delete insurer');
       }
     }
   };
 
-  // Handle duplicate
-  const handleDuplicate = async (insurer) => {
-    await duplicateRecord(insurer);
-    fetchInsurers(); // Refresh the list
+  const handleDuplicate = async (insurerId) => {
+    await duplicateRecord(insurerId, () => fetchInsurers());
   };
 
-  if (loading && insurers.length === 0) {
+  if (loading) {
     return (
       <ProtectedRoute>
         <Layout>
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading insurers...</p>
-            </div>
+          <div className="flex items-center justify-center min-h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
           </div>
         </Layout>
       </ProtectedRoute>
@@ -132,11 +126,11 @@ export default function InsurersPage() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Insurers</h1>
-              <p className="text-gray-600">Manage insurance companies and providers</p>
+              <p className="text-gray-600">Manage insurance companies</p>
             </div>
             <Link
               href="/insurers/create"
-              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
               Add Insurer
             </Link>
@@ -153,14 +147,28 @@ export default function InsurersPage() {
               <li>
                 <div className="flex items-center">
                   <span className="text-gray-400 mx-2">/</span>
+                  <Link href="/insurance" className="text-gray-700 hover:text-orange-600">
+                    Insurance Module
+                  </Link>
+                </div>
+              </li>
+              <li>
+                <div className="flex items-center">
+                  <span className="text-gray-400 mx-2">/</span>
                   <span className="text-gray-500">Insurers</span>
                 </div>
               </li>
             </ol>
           </nav>
 
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
           {/* Filters */}
-          <div className="bg-white p-4 rounded-lg shadow-sm border">
+          <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -171,7 +179,7 @@ export default function InsurersPage() {
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
                   placeholder="Search by name, code, or contact..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900 placeholder-gray-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900"
                 />
               </div>
               <div>
@@ -190,7 +198,7 @@ export default function InsurersPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Items per page
+                  Per Page
                 </label>
                 <select
                   value={filters.limit}
@@ -205,13 +213,6 @@ export default function InsurersPage() {
             </div>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
           {/* Insurers Table */}
           <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
             <div className="overflow-x-auto">
@@ -225,10 +226,7 @@ export default function InsurersPage() {
                       Code
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contact Person
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Phone
+                      Contact
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
@@ -246,21 +244,17 @@ export default function InsurersPage() {
                           <div className="text-sm font-medium text-gray-900">
                             {insurer.name}
                           </div>
-                          {insurer.email && (
-                            <div className="text-sm text-gray-500">
-                              {insurer.email}
-                            </div>
-                          )}
+                          <div className="text-sm text-gray-500">
+                            {insurer.contactPerson}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {insurer.code || '-'}
+                        {insurer.code}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {insurer.contactPerson || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {insurer.phone || '-'}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{insurer.phone}</div>
+                        <div className="text-sm text-gray-500">{insurer.email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -271,32 +265,31 @@ export default function InsurersPage() {
                           {insurer.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <Link
-                            href={`/insurers/${insurer._id}`}
-                            className="text-orange-600 hover:text-orange-900"
-                          >
-                            View
-                          </Link>
-                          <Link
-                            href={`/insurers/${insurer._id}/edit`}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Edit
-                          </Link>
-                          <DuplicateRecord
-                            record={insurer}
-                            recordType="Insurer"
-                            onDuplicate={handleDuplicate}
-                          />
-                          <button
-                            onClick={() => handleDelete(insurer)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <Link
+                          href={`/insurers/${insurer._id}`}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          View
+                        </Link>
+                        <Link
+                          href={`/insurers/${insurer._id}/edit`}
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleDuplicate(insurer._id)}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Duplicate
+                        </button>
+                        <button
+                          onClick={() => handleDelete(insurer._id, insurer.name)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -304,58 +297,76 @@ export default function InsurersPage() {
               </table>
             </div>
 
-            {/* Empty State */}
-            {insurers.length === 0 && !loading && (
-              <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-4">🏢</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No insurers found</h3>
-                <p className="text-gray-500 mb-4">
-                  {filters.search || filters.status 
-                    ? 'Try adjusting your search criteria.' 
-                    : 'Get started by adding your first insurer.'
-                  }
-                </p>
-                {!filters.search && !filters.status && (
-                  <Link
-                    href="/insurers/create"
-                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={!pagination.hasPrev}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Add Insurer
-                  </Link>
-                )}
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={!pagination.hasNext}
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing{' '}
+                      <span className="font-medium">
+                        {(pagination.page - 1) * pagination.limit + 1}
+                      </span>{' '}
+                      to{' '}
+                      <span className="font-medium">
+                        {Math.min(pagination.page * pagination.limit, pagination.total)}
+                      </span>{' '}
+                      of{' '}
+                      <span className="font-medium">{pagination.total}</span>{' '}
+                      results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                      <button
+                        onClick={() => handlePageChange(pagination.page - 1)}
+                        disabled={!pagination.hasPrev}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            page === pagination.page
+                              ? 'z-10 bg-orange-50 border-orange-500 text-orange-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => handlePageChange(pagination.page + 1)}
+                        disabled={!pagination.hasNext}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                {pagination.total} results
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={!pagination.hasPrev}
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Previous
-                </button>
-                <span className="px-3 py-1 text-sm text-gray-700">
-                  Page {pagination.page} of {pagination.totalPages}
-                </span>
-                <button
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={!pagination.hasNext}
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </Layout>
     </ProtectedRoute>

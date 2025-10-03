@@ -1,32 +1,49 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useConfirmationDialog } from '@/components/CustomDialog';
 import FormInput from '@/components/forms/FormInput';
+import FormSelect from '@/components/forms/FormSelect';
 import FormTextarea from '@/components/forms/FormTextarea';
 
-export default function CreateInsurerPage() {
+export default function CreateClaimPage() {
   const router = useRouter();
   const { showDialog } = useConfirmationDialog();
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [customerPolicies, setCustomerPolicies] = useState([]);
 
   const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    contactPerson: '',
-    phone: '',
-    email: '',
-    address: '',
-    notes: '',
-    isActive: true
+    customerPolicyId: '',
+    claimNumber: '',
+    dateOfEvent: '',
+    amountClaimed: '',
+    amountApproved: '',
+    status: 'draft',
+    notes: ''
   });
 
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    fetchCustomerPolicies();
+  }, []);
+
+  const fetchCustomerPolicies = async () => {
+    try {
+      const response = await fetch('/api/customer-policies?limit=100');
+      const data = await response.json();
+      if (data.success) {
+        setCustomerPolicies(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching customer policies:', error);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -47,16 +64,25 @@ export default function CreateInsurerPage() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Insurer name is required';
+    if (!formData.customerPolicyId) {
+      newErrors.customerPolicyId = 'Customer Policy is required';
     }
 
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+    if (!formData.claimNumber.trim()) {
+      newErrors.claimNumber = 'Claim number is required';
     }
 
-    if (formData.phone && !/^[\+]?[0-9][\d]{0,15}$/.test(formData.phone.replace(/[\s\-\(\)]/g, ''))) {
-      newErrors.phone = 'Please enter a valid phone number';
+    if (formData.amountClaimed && formData.amountClaimed <= 0) {
+      newErrors.amountClaimed = 'Claimed amount must be greater than 0';
+    }
+
+    if (formData.amountApproved && formData.amountApproved <= 0) {
+      newErrors.amountApproved = 'Approved amount must be greater than 0';
+    }
+
+    if (formData.amountClaimed && formData.amountApproved && 
+        parseFloat(formData.amountApproved) > parseFloat(formData.amountClaimed)) {
+      newErrors.amountApproved = 'Approved amount cannot be greater than claimed amount';
     }
 
     setErrors(newErrors);
@@ -73,7 +99,7 @@ export default function CreateInsurerPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/insurers', {
+      const response = await fetch('/api/claims', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,22 +114,36 @@ export default function CreateInsurerPage() {
         
         // Redirect after a short delay
         setTimeout(() => {
-          router.push('/insurers');
+          router.push('/claims');
         }, 2000);
       } else {
         if (data.errors) {
           setErrors(data.errors);
         } else {
-          await showDialog('Error', data.error || 'Failed to create insurer');
+          await showDialog('Error', data.error || 'Failed to create claim');
         }
       }
     } catch (error) {
-      console.error('Error creating insurer:', error);
-      await showDialog('Error', 'Failed to create insurer');
+      console.error('Error creating claim:', error);
+      await showDialog('Error', 'Failed to create claim');
     } finally {
       setLoading(false);
     }
   };
+
+  const claimStatusOptions = [
+    { value: 'draft', label: 'Draft' },
+    { value: 'submitted', label: 'Submitted' },
+    { value: 'under_review', label: 'Under Review' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' },
+    { value: 'settled', label: 'Settled' }
+  ];
+
+  const customerPolicyOptions = customerPolicies.map(policy => ({
+    value: policy._id,
+    label: `${policy.policyNumber} - ${policy.customer?.name || 'Unknown Customer'}`
+  }));
 
   return (
     <ProtectedRoute>
@@ -112,14 +152,14 @@ export default function CreateInsurerPage() {
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Add New Insurer</h1>
-              <p className="text-gray-600">Create a new insurance company record</p>
+              <h1 className="text-2xl font-bold text-gray-900">Add New Claim</h1>
+              <p className="text-gray-600">Create a new insurance claim</p>
             </div>
             <Link
-              href="/insurers"
+              href="/claims"
               className="text-gray-600 hover:text-gray-900"
             >
-              ← Back to Insurers
+              ← Back to Claims
             </Link>
           </div>
 
@@ -134,8 +174,8 @@ export default function CreateInsurerPage() {
               <li>
                 <div className="flex items-center">
                   <span className="text-gray-400 mx-2">/</span>
-                  <Link href="/insurers" className="text-gray-700 hover:text-orange-600">
-                    Insurers
+                  <Link href="/claims" className="text-gray-700 hover:text-orange-600">
+                    Claims
                   </Link>
                 </div>
               </li>
@@ -156,87 +196,74 @@ export default function CreateInsurerPage() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium text-gray-900">Basic Information</h3>
                   
-                  <FormInput
-                    label="Insurer Name *"
-                    name="name"
-                    value={formData.name}
+                  <FormSelect
+                    label="Customer Policy *"
+                    name="customerPolicyId"
+                    value={formData.customerPolicyId}
                     onChange={handleInputChange}
-                    error={errors.name}
-                    placeholder="Enter insurer name"
+                    options={customerPolicyOptions}
+                    error={errors.customerPolicyId}
+                    placeholder="Select customer policy"
                     required
                   />
 
                   <FormInput
-                    label="Insurer Code"
-                    name="code"
-                    value={formData.code}
+                    label="Claim Number *"
+                    name="claimNumber"
+                    value={formData.claimNumber}
                     onChange={handleInputChange}
-                    error={errors.code}
-                    placeholder="Enter unique code (e.g., LIC, ICICI)"
+                    error={errors.claimNumber}
+                    placeholder="Enter claim number"
+                    required
                   />
 
                   <FormInput
-                    label="Contact Person"
-                    name="contactPerson"
-                    value={formData.contactPerson}
+                    label="Date of Event"
+                    name="dateOfEvent"
+                    type="date"
+                    value={formData.dateOfEvent}
                     onChange={handleInputChange}
-                    error={errors.contactPerson}
-                    placeholder="Enter contact person name"
+                    error={errors.dateOfEvent}
+                  />
+
+                  <FormSelect
+                    label="Status"
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    options={claimStatusOptions}
+                    error={errors.status}
                   />
                 </div>
 
-                {/* Contact Information */}
+                {/* Amount Information */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900">Contact Information</h3>
+                  <h3 className="text-lg font-medium text-gray-900">Amount Information</h3>
                   
                   <FormInput
-                    label="Phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
+                    label="Amount Claimed"
+                    name="amountClaimed"
+                    type="number"
+                    value={formData.amountClaimed}
                     onChange={handleInputChange}
-                    error={errors.phone}
-                    placeholder="Enter phone number"
+                    error={errors.amountClaimed}
+                    placeholder="Enter claimed amount"
+                    min="0"
+                    step="0.01"
                   />
 
                   <FormInput
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
+                    label="Amount Approved"
+                    name="amountApproved"
+                    type="number"
+                    value={formData.amountApproved}
                     onChange={handleInputChange}
-                    error={errors.email}
-                    placeholder="Enter email address"
+                    error={errors.amountApproved}
+                    placeholder="Enter approved amount"
+                    min="0"
+                    step="0.01"
                   />
-
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="isActive"
-                      name="isActive"
-                      checked={formData.isActive}
-                      onChange={handleInputChange}
-                      className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
-                      Active
-                    </label>
-                  </div>
                 </div>
-              </div>
-
-              {/* Address */}
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Address</h3>
-                <FormTextarea
-                  label="Address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  error={errors.address}
-                  placeholder="Enter complete address"
-                  rows={3}
-                />
               </div>
 
               {/* Notes */}
@@ -248,7 +275,7 @@ export default function CreateInsurerPage() {
                   value={formData.notes}
                   onChange={handleInputChange}
                   error={errors.notes}
-                  placeholder="Enter any additional notes or information"
+                  placeholder="Enter any additional notes or information about the claim"
                   rows={4}
                 />
               </div>
@@ -256,7 +283,7 @@ export default function CreateInsurerPage() {
               {/* Submit Button */}
               <div className="flex justify-end space-x-4">
                 <Link
-                  href="/insurers"
+                  href="/claims"
                   className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Cancel
@@ -266,7 +293,7 @@ export default function CreateInsurerPage() {
                   disabled={loading}
                   className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {loading ? 'Creating...' : 'Create Insurer'}
+                  {loading ? 'Creating...' : 'Create Claim'}
                 </button>
               </div>
             </form>
@@ -278,13 +305,13 @@ export default function CreateInsurerPage() {
               <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
                 <div className="text-green-500 text-6xl mb-4">✓</div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Insurer Created Successfully!
+                  Claim Created Successfully!
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  The insurer has been added to the system.
+                  The claim has been added to the system.
                 </p>
                 <div className="text-sm text-gray-500">
-                  Redirecting to insurers list...
+                  Redirecting to claims list...
                 </div>
               </div>
             </div>

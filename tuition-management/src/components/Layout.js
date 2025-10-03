@@ -7,19 +7,26 @@ import Link from 'next/link';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { name: 'Students', href: '/students', icon: '👨‍🎓' },
-  { name: 'Teachers', href: '/teachers', icon: '👩‍🏫' },
-  { name: 'Customers', href: '/customers', icon: '👥' },
-  { name: 'Transport', href: '/transport-customers', icon: '🚌' },
-  { name: 'Fees', href: '/fees', icon: '💰' },
-  { name: 'Reports', href: '/fees/reports', icon: '📈' },
-  // Insurance section
-  { name: 'Insurers', href: '/insurers', icon: '🏢' },
-  { name: 'Policies', href: '/policies', icon: '📋' },
-  { name: 'Customer Policies', href: '/customer-policies', icon: '📄' },
-  { name: 'Policy Payments', href: '/policy-payments', icon: '💳' },
-  { name: 'Claims', href: '/claims', icon: '⚖️' },
-  { name: 'Insurance Reports', href: '/insurance/reports', icon: '📊' },
+  
+  // Tuition Module
+  { name: 'Tuition Module', href: '#', icon: '🎓', isHeader: true },
+  { name: 'Tuition Overview', href: '/tuition', icon: '🎓', module: 'tuition' },
+  { name: 'Students', href: '/students', icon: '👨‍🎓', module: 'tuition' },
+  { name: 'Teachers', href: '/teachers', icon: '👩‍🏫', module: 'tuition' },
+  { name: 'Customers', href: '/customers', icon: '👥', module: 'tuition' },
+  { name: 'Transport', href: '/transport-customers', icon: '🚌', module: 'tuition' },
+  { name: 'Fees', href: '/fees', icon: '💰', module: 'tuition' },
+  { name: 'Tuition Reports', href: '/fees/reports', icon: '📈', module: 'tuition' },
+  
+  // Insurance Module
+  { name: 'Insurance Module', href: '#', icon: '🛡️', isHeader: true },
+  { name: 'Insurance Overview', href: '/insurance', icon: '🛡️', module: 'insurance' },
+  { name: 'Insurers', href: '/insurers', icon: '🏢', module: 'insurance' },
+  { name: 'Policies', href: '/policies', icon: '📋', module: 'insurance' },
+  { name: 'Customer Policies', href: '/customer-policies', icon: '📄', module: 'insurance' },
+  { name: 'Policy Payments', href: '/policy-payments', icon: '💳', module: 'insurance' },
+  { name: 'Claims', href: '/claims', icon: '⚖️', module: 'insurance' },
+  { name: 'Insurance Reports', href: '/insurance/reports', icon: '📊', module: 'insurance' },
 ];
 
 const adminNavigation = [
@@ -82,6 +89,14 @@ export default function Layout({ children }) {
     if (href === '/fees') {
       return pathname === '/fees';
     }
+    // Special case for insurance - only match exact path, not sub-paths
+    if (href === '/insurance') {
+      return pathname === '/insurance';
+    }
+    // Special case for tuition - only match exact path, not sub-paths
+    if (href === '/tuition') {
+      return pathname === '/tuition';
+    }
     // For other paths, allow sub-paths
     return pathname.startsWith(href + '/');
   };
@@ -91,7 +106,7 @@ export default function Layout({ children }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && isMobile && (
         <div 
@@ -101,12 +116,12 @@ export default function Layout({ children }) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Application Shell - Fixed Sidebar */}
       <div className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:inset-0 lg:shadow-lg
-        flex-shrink-0
+        lg:translate-x-0 lg:shadow-lg
+        flex flex-col
         ${!sidebarOpen && !isMobile ? 'lg:hidden' : ''}
       `}>
         {/* Sidebar Header */}
@@ -125,23 +140,36 @@ export default function Layout({ children }) {
         </div>
 
         {/* Navigation */}
-        <nav className="mt-8 px-4 pb-4 overflow-y-auto h-full">
+        <nav className="mt-8 px-4 pb-4 overflow-y-auto flex-1">
           <div className="space-y-2">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  isActive(item.href)
-                    ? 'bg-orange-100 text-orange-700 border-r-2 border-orange-500 shadow-sm'
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-                onClick={() => isMobile && setSidebarOpen(false)}
-              >
-                <span className="mr-3 text-lg">{item.icon}</span>
-                <span className="truncate">{item.name}</span>
-              </Link>
-            ))}
+            {navigation.map((item) => {
+              if (item.isHeader) {
+                return (
+                  <div key={item.name} className="mt-6 mb-3">
+                    <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center">
+                      <span className="mr-2 text-sm">{item.icon}</span>
+                      {item.name}
+                    </h3>
+                  </div>
+                );
+              }
+              
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    isActive(item.href)
+                      ? 'bg-orange-100 text-orange-700 border-r-2 border-orange-500 shadow-sm'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                  onClick={() => isMobile && setSidebarOpen(false)}
+                >
+                  <span className="mr-3 text-lg">{item.icon}</span>
+                  <span className="truncate">{item.name}</span>
+                </Link>
+              );
+            })}
           </div>
 
           {user?.role === 'admin' && (
@@ -194,68 +222,69 @@ export default function Layout({ children }) {
         </nav>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-screen">
-        {/* Top bar */}
-        <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between h-16 px-4">
-            {/* Mobile menu button */}
+      {/* Application Shell - Fixed Top Bar */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-white shadow-sm border-b border-gray-200">
+        <div className="flex items-center justify-between h-16 px-4">
+          {/* Mobile menu button */}
+          <button
+            className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            onClick={toggleSidebar}
+            aria-label="Open sidebar"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          {/* Desktop sidebar toggle button */}
+          <button
+            onClick={toggleSidebar}
+            className="hidden lg:block p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            aria-label="Toggle sidebar"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          {/* Page title for mobile */}
+          <div className="lg:hidden flex-1 text-center">
+            <h1 className="text-lg font-semibold text-gray-900 truncate">
+              {navigation.find(item => isActive(item.href))?.name || 
+               adminNavigation.find(item => isActive(item.href))?.name || 
+               'Tuition Manager'}
+            </h1>
+          </div>
+
+          {/* User info and logout */}
+          <div className="flex items-center space-x-4">
+            <div className="hidden sm:block text-sm">
+              <span className="text-gray-500">Welcome,</span>
+              <span className="font-medium text-gray-900 ml-1">{user?.name}</span>
+              <span className="ml-2 px-2 py-1 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
+                {user?.role}
+              </span>
+            </div>
             <button
-              className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-              onClick={toggleSidebar}
-              aria-label="Open sidebar"
+              onClick={handleLogout}
+              className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
             >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              <span className="hidden sm:inline">Logout</span>
+              <svg className="sm:hidden h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </button>
-
-            {/* Desktop sidebar toggle button */}
-            <button
-              onClick={toggleSidebar}
-              className="hidden lg:block p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-              aria-label="Toggle sidebar"
-            >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-
-            {/* Page title for mobile */}
-            <div className="lg:hidden flex-1 text-center">
-              <h1 className="text-lg font-semibold text-gray-900 truncate">
-                {navigation.find(item => isActive(item.href))?.name || 
-                 adminNavigation.find(item => isActive(item.href))?.name || 
-                 'Tuition Manager'}
-              </h1>
-            </div>
-
-            {/* User info and logout */}
-            <div className="flex items-center space-x-4">
-              <div className="hidden sm:block text-sm">
-                <span className="text-gray-500">Welcome,</span>
-                <span className="font-medium text-gray-900 ml-1">{user?.name}</span>
-                <span className="ml-2 px-2 py-1 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
-                  {user?.role}
-                </span>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-              >
-                <span className="hidden sm:inline">Logout</span>
-                <svg className="sm:hidden h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
-            </div>
           </div>
         </div>
+      </div>
 
-        {/* Page content */}
-        <main className="flex-1 p-4 sm:p-6">
-          {children}
-        </main>
+      {/* Main Content Area - Only this changes when navigating */}
+      <div className={`pt-16 transition-all duration-300 ease-in-out ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
+        <div className="min-h-screen">
+          <main className="p-4 sm:p-6">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );

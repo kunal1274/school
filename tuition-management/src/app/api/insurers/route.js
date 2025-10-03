@@ -4,6 +4,7 @@ import { InsurerModel } from '@/lib/models/insurer.model';
 import { validateInsuranceData } from '@/lib/validation-insurance';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { extractClientInfo } from '@/lib/activity-logger';
+import { ObjectId } from 'mongodb';
 
 export const GET = withAuth(async (req, context) => {
   try {
@@ -89,15 +90,15 @@ export const POST = withAuth(async (req, context) => {
     // Add audit fields
     const insurerData = {
       ...body,
-      createdBy: user._id,
-      updatedBy: user._id
+      createdBy: new ObjectId(user._id),
+      updatedBy: new ObjectId(user._id)
     };
 
     const insurer = await InsurerModel.create(insurerData);
 
     // Log activity
     await ActivityLogger.logActivity({
-      userId: user._id,
+      userId: new ObjectId(user._id),
       action: 'create',
       entityType: 'insurer',
       entityId: insurer._id,

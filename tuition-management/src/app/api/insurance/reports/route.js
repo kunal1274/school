@@ -4,8 +4,7 @@ import { getDatabase } from '@/lib/models';
 import { COLLECTIONS } from '@/lib/models';
 
 // GET /api/insurance/reports - Get insurance reports and analytics
-export async function GET(request) {
-  return withAuth(request, async (user) => {
+export const GET = withAuth(async (request) => {
     try {
       const { searchParams } = new URL(request.url);
       const reportType = searchParams.get('type') || 'summary';
@@ -54,8 +53,7 @@ export async function GET(request) {
         { status: 500 }
       );
     }
-  });
-}
+}, 'staff');
 
 // Summary Report - Overall insurance metrics
 async function getSummaryReport(db, dateFilter, additionalFilter) {

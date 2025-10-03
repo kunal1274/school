@@ -5,8 +5,7 @@ import { COLLECTIONS, logActivity } from '@/lib/models';
 import { validateClaimData } from '@/lib/validation-insurance';
 
 // GET /api/claims - List claims with filtering
-export async function GET(request) {
-  return withAuth(request, async (user) => {
+export const GET = withAuth(async (request) => {
     try {
       const { searchParams } = new URL(request.url);
       const page = parseInt(searchParams.get('page')) || 1;
@@ -142,12 +141,10 @@ export async function GET(request) {
         { status: 500 }
       );
     }
-  });
-}
+}, 'staff');
 
 // POST /api/claims - Create new claim
-export async function POST(request) {
-  return withAuth(request, async (user) => {
+export const POST = withAuth(async (request) => {
     try {
       const body = await request.json();
       
@@ -227,5 +224,4 @@ export async function POST(request) {
         { status: 500 }
       );
     }
-  });
-}
+}, 'staff');

@@ -18,11 +18,7 @@ export default function ClaimsPage() {
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
-    customerPolicyId: '',
     status: '',
-    claimantId: '',
-    startDate: '',
-    endDate: '',
     page: 1,
     limit: 10
   });
@@ -54,9 +50,9 @@ export default function ClaimsPage() {
       } else {
         setError(data.error || 'Failed to fetch claims');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error fetching claims:', error);
       setError('Failed to fetch claims');
-      console.error('Error fetching claims:', err);
     } finally {
       setLoading(false);
     }
@@ -66,62 +62,56 @@ export default function ClaimsPage() {
     fetchClaims();
   }, [filters]);
 
-  // Handle filter changes
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
       ...prev,
       [key]: value,
-      page: 1 // Reset to first page when filters change
+      page: 1 // Reset to first page when filtering
     }));
   };
 
-  // Handle pagination
   const handlePageChange = (newPage) => {
-    setFilters(prev => ({ ...prev, page: newPage }));
+    setFilters(prev => ({
+      ...prev,
+      page: newPage
+    }));
   };
 
-  // Handle delete
-  const handleDelete = async (claim) => {
+  const handleDelete = async (claimId, claimNumber) => {
     const confirmed = await showConfirmation(
       'Delete Claim',
-      `Are you sure you want to delete claim "${claim.claimNumber}"? This action cannot be undone.`
+      `Are you sure you want to delete claim ${claimNumber}? This action cannot be undone.`
     );
 
     if (confirmed) {
       try {
-        const response = await fetch(`/api/claims/${claim._id}`, {
-          method: 'DELETE'
+        const response = await fetch(`/api/claims/${claimId}`, {
+          method: 'DELETE',
         });
 
-        const data = await response.json();
-
-        if (data.success) {
-          fetchClaims(); // Refresh the list
+        if (response.ok) {
+          await fetchClaims(); // Refresh the list
         } else {
-          setError(data.error || 'Failed to delete claim');
+          const errorData = await response.json();
+          alert('Error', errorData.error || 'Failed to delete claim');
         }
-      } catch (err) {
-        setError('Failed to delete claim');
-        console.error('Error deleting claim:', err);
+      } catch (error) {
+        console.error('Error deleting claim:', error);
+        alert('Error', 'Failed to delete claim');
       }
     }
   };
 
-  // Handle duplicate
-  const handleDuplicate = async (claim) => {
-    await duplicateRecord(claim);
-    fetchClaims(); // Refresh the list
+  const handleDuplicate = async (claimId) => {
+    await duplicateRecord(claimId, () => fetchClaims());
   };
 
-  if (loading && claims.length === 0) {
+  if (loading) {
     return (
       <ProtectedRoute>
         <Layout>
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading claims...</p>
-            </div>
+          <div className="flex items-center justify-center min-h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
           </div>
         </Layout>
       </ProtectedRoute>
@@ -140,7 +130,7 @@ export default function ClaimsPage() {
             </div>
             <Link
               href="/claims/create"
-              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
               Add Claim
             </Link>
@@ -157,15 +147,29 @@ export default function ClaimsPage() {
               <li>
                 <div className="flex items-center">
                   <span className="text-gray-400 mx-2">/</span>
+                  <Link href="/insurance" className="text-gray-700 hover:text-orange-600">
+                    Insurance Module
+                  </Link>
+                </div>
+              </li>
+              <li>
+                <div className="flex items-center">
+                  <span className="text-gray-400 mx-2">/</span>
                   <span className="text-gray-500">Claims</span>
                 </div>
               </li>
             </ol>
           </nav>
 
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
           {/* Filters */}
-          <div className="bg-white p-4 rounded-lg shadow-sm border">
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Search
@@ -174,8 +178,8 @@ export default function ClaimsPage() {
                   type="text"
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
-                  placeholder="Search by claim number..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900 placeholder-gray-500"
+                  placeholder="Search by claim number or policy..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900"
                 />
               </div>
               <div>
@@ -198,29 +202,7 @@ export default function ClaimsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  From Date
-                </label>
-                <input
-                  type="date"
-                  value={filters.startDate}
-                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  To Date
-                </label>
-                <input
-                  type="date"
-                  value={filters.endDate}
-                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Items per page
+                  Per Page
                 </label>
                 <select
                   value={filters.limit}
@@ -235,13 +217,6 @@ export default function ClaimsPage() {
             </div>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
           {/* Claims Table */}
           <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
             <div className="overflow-x-auto">
@@ -249,10 +224,7 @@ export default function ClaimsPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Claim Number
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Customer
+                      Claim
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Policy
@@ -261,13 +233,10 @@ export default function ClaimsPage() {
                       Amount Claimed
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Amount Approved
+                      Event Date
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date of Event
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -278,33 +247,35 @@ export default function ClaimsPage() {
                   {claims.map((claim) => (
                     <tr key={claim._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {claim.claimNumber}
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {claim.claimNumber}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {claim.claimantName}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {claim.customer?.name || '-'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {claim.customerPolicy?.policyNumber || '-'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {claim.policy?.name || '-'}
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {claim.policyNumber}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {claim.customerName}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {claim.amountClaimed ? `₹${claim.amountClaimed.toLocaleString()}` : '-'}
+                        ₹{claim.amountClaimed}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {claim.amountApproved ? `₹${claim.amountApproved.toLocaleString()}` : '-'}
+                        {claim.dateOfEvent ? new Date(claim.dateOfEvent).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           claim.status === 'draft' 
-                            ? 'bg-gray-100 text-gray-800'
+                            ? 'bg-gray-100 text-gray-800' 
                             : claim.status === 'submitted'
                             ? 'bg-blue-100 text-blue-800'
                             : claim.status === 'under_review'
@@ -313,45 +284,36 @@ export default function ClaimsPage() {
                             ? 'bg-green-100 text-green-800'
                             : claim.status === 'rejected'
                             ? 'bg-red-100 text-red-800'
-                            : claim.status === 'settled'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-gray-100 text-gray-800'
+                            : 'bg-purple-100 text-purple-800'
                         }`}>
-                          {claim.status ? claim.status.charAt(0).toUpperCase() + claim.status.slice(1).replace('_', ' ') : '-'}
+                          {claim.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {claim.dateOfEvent 
-                          ? new Date(claim.dateOfEvent).toLocaleDateString()
-                          : '-'
-                        }
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <Link
-                            href={`/claims/${claim._id}`}
-                            className="text-orange-600 hover:text-orange-900"
-                          >
-                            View
-                          </Link>
-                          <Link
-                            href={`/claims/${claim._id}/edit`}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Edit
-                          </Link>
-                          <DuplicateRecord
-                            record={claim}
-                            recordType="Claim"
-                            onDuplicate={handleDuplicate}
-                          />
-                          <button
-                            onClick={() => handleDelete(claim)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <Link
+                          href={`/claims/${claim._id}`}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          View
+                        </Link>
+                        <Link
+                          href={`/claims/${claim._id}/edit`}
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleDuplicate(claim._id)}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Duplicate
+                        </button>
+                        <button
+                          onClick={() => handleDelete(claim._id, claim.claimNumber)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -359,58 +321,76 @@ export default function ClaimsPage() {
               </table>
             </div>
 
-            {/* Empty State */}
-            {claims.length === 0 && !loading && (
-              <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-4">⚖️</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No claims found</h3>
-                <p className="text-gray-500 mb-4">
-                  {filters.search || filters.status || filters.startDate || filters.endDate 
-                    ? 'Try adjusting your search criteria.' 
-                    : 'Get started by adding your first claim.'
-                  }
-                </p>
-                {!filters.search && !filters.status && !filters.startDate && !filters.endDate && (
-                  <Link
-                    href="/claims/create"
-                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={!pagination.hasPrev}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Add Claim
-                  </Link>
-                )}
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={!pagination.hasNext}
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing{' '}
+                      <span className="font-medium">
+                        {(pagination.page - 1) * pagination.limit + 1}
+                      </span>{' '}
+                      to{' '}
+                      <span className="font-medium">
+                        {Math.min(pagination.page * pagination.limit, pagination.total)}
+                      </span>{' '}
+                      of{' '}
+                      <span className="font-medium">{pagination.total}</span>{' '}
+                      results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                      <button
+                        onClick={() => handlePageChange(pagination.page - 1)}
+                        disabled={!pagination.hasPrev}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            page === pagination.page
+                              ? 'z-10 bg-orange-50 border-orange-500 text-orange-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => handlePageChange(pagination.page + 1)}
+                        disabled={!pagination.hasNext}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                {pagination.total} results
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={!pagination.hasPrev}
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Previous
-                </button>
-                <span className="px-3 py-1 text-sm text-gray-700">
-                  Page {pagination.page} of {pagination.totalPages}
-                </span>
-                <button
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={!pagination.hasNext}
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </Layout>
     </ProtectedRoute>

@@ -102,8 +102,8 @@ export function validateInsurerData(data) {
       required: false,
       type: 'string',
       maxLength: 20,
-      pattern: /^[A-Z0-9_-]+$/,
-      patternMessage: 'Code must contain only uppercase letters, numbers, hyphens, and underscores'
+      pattern: /^[A-Z0-9_\s-]+$/,
+      patternMessage: 'Code must contain only uppercase letters, numbers, spaces, hyphens, and underscores'
     },
     contactPerson: {
       required: false,
@@ -113,8 +113,8 @@ export function validateInsurerData(data) {
     phone: {
       required: false,
       type: 'string',
-      pattern: /^[\+]?[1-9][\d]{0,15}$/,
-      patternMessage: 'Phone number must be a valid international format'
+      pattern: /^[\+]?[0-9][\d]{0,15}$/,
+      patternMessage: 'Phone number must be a valid format'
     },
     email: {
       required: false,
@@ -171,8 +171,8 @@ export function validatePolicyData(data) {
       required: false,
       type: 'string',
       maxLength: 20,
-      pattern: /^[A-Z0-9_-]+$/,
-      patternMessage: 'Code must contain only uppercase letters, numbers, hyphens, and underscores'
+      pattern: /^[A-Z0-9_\s-]+$/,
+      patternMessage: 'Code must contain only uppercase letters, numbers, spaces, hyphens, and underscores'
     },
     description: {
       required: false,

@@ -153,6 +153,10 @@ export function validateCustomerData(data, isUpdate = false) {
     errors.email = 'Invalid email format';
   }
 
+  if (data.status && !['active', 'inactive'].includes(data.status)) {
+    errors.status = 'Status must be active or inactive';
+  }
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors

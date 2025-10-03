@@ -1,56 +1,66 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import WhatsAppButton from '@/components/WhatsAppButton';
 import { useConfirmationDialog } from '@/components/CustomDialog';
-import Link from 'next/link';
+import DuplicateRecord, { useDuplicateRecord } from '@/components/DuplicateRecord';
 
 export default function TransportCustomersPage() {
-  const { user } = useAuth();
-  const { confirm, alert, DialogComponent } = useConfirmationDialog();
+  const router = useRouter();
+  const { showConfirmation } = useConfirmationDialog();
+  const { duplicateRecord } = useDuplicateRecord('TransportCustomer');
+
   const [transportCustomers, setTransportCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({});
+  const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
-    vehicleNumber: '',
     status: '',
     page: 1,
     limit: 10
   });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  });
 
-  useEffect(() => {
-    fetchTransportCustomers();
-  }, [filters]);
-
+  // Fetch transport customers
   const fetchTransportCustomers = async () => {
     try {
       setLoading(true);
       const queryParams = new URLSearchParams();
+      
       Object.entries(filters).forEach(([key, value]) => {
         if (value) queryParams.append(key, value);
       });
 
-      const response = await fetch(`/api/transport-customers?${queryParams}`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`/api/transport-customers?${queryParams}`);
+      const data = await response.json();
 
-      if (response.ok) {
-        const data = await response.json();
-        setTransportCustomers(data.data || []);
-        setPagination(data.pagination || {});
+      if (data.success) {
+        setTransportCustomers(data.data);
+        setPagination(data.pagination);
       } else {
-        console.error('Failed to fetch transport customers');
+        setError(data.error || 'Failed to fetch transport customers');
       }
     } catch (error) {
       console.error('Error fetching transport customers:', error);
+      setError('Failed to fetch transport customers');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchTransportCustomers();
+  }, [filters]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
@@ -68,61 +78,55 @@ export default function TransportCustomersPage() {
   };
 
   const handleDelete = async (customerId, customerName) => {
-    confirm(
+    const confirmed = await showConfirmation(
       'Delete Transport Customer',
-      `Are you sure you want to delete ${customerName}? This action cannot be undone.`,
-      async () => {
-        try {
-          const response = await fetch(`/api/transport-customers/${customerId}`, {
-            method: 'DELETE',
-            credentials: 'include'
-          });
-
-          if (response.ok) {
-            alert('Success', 'Transport customer deleted successfully!', 'success');
-            fetchTransportCustomers(); // Refresh the list
-          } else {
-            const data = await response.json();
-            alert('Error', data.error || 'Failed to delete transport customer', 'error');
-          }
-        } catch (error) {
-          console.error('Error deleting transport customer:', error);
-          alert('Error', 'Failed to delete transport customer. Please try again.', 'error');
-        }
-      }
+      `Are you sure you want to delete ${customerName}? This action cannot be undone.`
     );
+
+    if (confirmed) {
+      try {
+        const response = await fetch(`/api/transport-customers/${customerId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          await fetchTransportCustomers(); // Refresh the list
+        } else {
+          const errorData = await response.json();
+          alert('Error', errorData.error || 'Failed to delete transport customer');
+        }
+      } catch (error) {
+        console.error('Error deleting transport customer:', error);
+        alert('Error', 'Failed to delete transport customer');
+      }
+    }
   };
 
-  const canDelete = user?.role === 'admin' || user?.role === 'moderator';
+  const handleDuplicate = async (customerId) => {
+    await duplicateRecord(customerId, () => fetchTransportCustomers());
+  };
+
+  if (loading) {
+    return (
+      <ProtectedRoute>
+        <Layout>
+          <div className="flex items-center justify-center min-h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+          </div>
+        </Layout>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
       <Layout>
         <div className="space-y-6">
-          {/* Breadcrumb */}
-          <nav className="flex" aria-label="Breadcrumb">
-            <ol className="flex items-center space-x-4">
-              <li>
-                <Link href="/dashboard" className="text-gray-400 hover:text-gray-500">
-                  Dashboard
-                </Link>
-              </li>
-              <li>
-                <div className="flex items-center">
-                  <svg className="flex-shrink-0 h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span className="ml-4 text-sm font-medium text-gray-500">Transport Customers</span>
-                </div>
-              </li>
-            </ol>
-          </nav>
-
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Transport Customers</h1>
-              <p className="text-gray-600">Manage transport customer records and vehicle assignments</p>
+              <p className="text-gray-600">Manage transport customers and routes</p>
             </div>
             <Link
               href="/transport-customers/create"
@@ -132,9 +136,40 @@ export default function TransportCustomersPage() {
             </Link>
           </div>
 
+          {/* Breadcrumb */}
+          <nav className="flex" aria-label="Breadcrumb">
+            <ol className="inline-flex items-center space-x-1 md:space-x-3">
+              <li className="inline-flex items-center">
+                <Link href="/dashboard" className="text-gray-700 hover:text-orange-600">
+                  Dashboard
+                </Link>
+              </li>
+              <li>
+                <div className="flex items-center">
+                  <span className="text-gray-400 mx-2">/</span>
+                  <Link href="/tuition" className="text-gray-700 hover:text-orange-600">
+                    Tuition Module
+                  </Link>
+                </div>
+              </li>
+              <li>
+                <div className="flex items-center">
+                  <span className="text-gray-400 mx-2">/</span>
+                  <span className="text-gray-500">Transport Customers</span>
+                </div>
+              </li>
+            </ol>
+          </nav>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
           {/* Filters */}
-          <div className="bg-white rounded-lg shadow-soft p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Search
@@ -143,20 +178,8 @@ export default function TransportCustomersPage() {
                   type="text"
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
-                  placeholder="Search customers..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900 placeholder-gray-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Vehicle Number
-                </label>
-                <input
-                  type="text"
-                  value={filters.vehicleNumber}
-                  onChange={(e) => handleFilterChange('vehicleNumber', e.target.value)}
-                  placeholder="Filter by vehicle..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900 placeholder-gray-500"
+                  placeholder="Search by name, phone, or vehicle..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900"
                 />
               </div>
               <div>
@@ -191,145 +214,160 @@ export default function TransportCustomersPage() {
           </div>
 
           {/* Transport Customers Table */}
-          <div className="bg-white rounded-lg shadow-soft overflow-hidden">
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
-              </div>
-            ) : transportCustomers.length > 0 ? (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Customer
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Vehicle Details
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Route
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {transportCustomers.map((customer) => (
-                        <tr key={customer._id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {customer.name}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {customer.phone}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{customer.vehicleNumber}</div>
-                            <div className="text-sm text-gray-500">{customer.vehicleType}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{customer.pickupPoint}</div>
-                            <div className="text-sm text-gray-500">to {customer.dropPoint}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              customer.status === 'active'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {customer.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                            <Link
-                              href={`/transport-customers/${customer._id}`}
-                              className="text-orange-600 hover:text-orange-900"
-                            >
-                              View
-                            </Link>
-                            <Link
-                              href={`/transport-customers/${customer._id}/edit`}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              Edit
-                            </Link>
-                            <WhatsAppButton
-                              phone={customer.phone}
-                              name={customer.name}
-                              message={`Hello ${customer.name}, this is regarding your transport service. Please contact us for more details.`}
-                              size="xs"
-                              variant="outline"
-                            />
-                            {canDelete && (
-                              <button
-                                onClick={() => handleDelete(customer._id, customer.name)}
-                                className="text-red-600 hover:text-red-900"
-                              >
-                                Delete
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Pagination */}
-                {pagination.pages > 1 && (
-                  <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-700">
-                        Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                        {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                        {pagination.total} results
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handlePageChange(pagination.page - 1)}
-                          disabled={pagination.page <= 1}
-                          className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                        >
-                          Previous
-                        </button>
-                        <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-md text-sm">
-                          {pagination.page} of {pagination.pages}
+          <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Vehicle
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Route
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {transportCustomers.map((customer) => (
+                    <tr key={customer._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {customer.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {customer.phone}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {customer.vehicleNo}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{customer.pickupPoint}</div>
+                        <div className="text-sm text-gray-500">to {customer.dropPoint}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          customer.status === 'active' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {customer.status}
                         </span>
-                        <button
-                          onClick={() => handlePageChange(pagination.page + 1)}
-                          disabled={pagination.page >= pagination.pages}
-                          className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <Link
+                          href={`/transport-customers/${customer._id}`}
+                          className="text-blue-600 hover:text-blue-900"
                         >
-                          Next
+                          View
+                        </Link>
+                        <Link
+                          href={`/transport-customers/${customer._id}/edit`}
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleDuplicate(customer._id)}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Duplicate
                         </button>
-                      </div>
-                    </div>
+                        <button
+                          onClick={() => handleDelete(customer._id, customer.name)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={!pagination.hasPrev}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={!pagination.hasNext}
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing{' '}
+                      <span className="font-medium">
+                        {(pagination.page - 1) * pagination.limit + 1}
+                      </span>{' '}
+                      to{' '}
+                      <span className="font-medium">
+                        {Math.min(pagination.page * pagination.limit, pagination.total)}
+                      </span>{' '}
+                      of{' '}
+                      <span className="font-medium">{pagination.total}</span>{' '}
+                      results
+                    </p>
                   </div>
-                )}
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No transport customers found</p>
-                <Link
-                  href="/transport-customers/create"
-                  className="mt-2 inline-block px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-                >
-                  Add First Transport Customer
-                </Link>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                      <button
+                        onClick={() => handlePageChange(pagination.page - 1)}
+                        disabled={!pagination.hasPrev}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            page === pagination.page
+                              ? 'z-10 bg-orange-50 border-orange-500 text-orange-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => handlePageChange(pagination.page + 1)}
+                        disabled={!pagination.hasNext}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
-        <DialogComponent />
       </Layout>
     </ProtectedRoute>
   );

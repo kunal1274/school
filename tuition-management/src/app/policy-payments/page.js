@@ -18,10 +18,7 @@ export default function PolicyPaymentsPage() {
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
-    customerPolicyId: '',
-    modeOfPayment: '',
-    startDate: '',
-    endDate: '',
+    status: '',
     page: 1,
     limit: 10
   });
@@ -53,9 +50,9 @@ export default function PolicyPaymentsPage() {
       } else {
         setError(data.error || 'Failed to fetch policy payments');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error fetching policy payments:', error);
       setError('Failed to fetch policy payments');
-      console.error('Error fetching policy payments:', err);
     } finally {
       setLoading(false);
     }
@@ -65,62 +62,56 @@ export default function PolicyPaymentsPage() {
     fetchPayments();
   }, [filters]);
 
-  // Handle filter changes
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
       ...prev,
       [key]: value,
-      page: 1 // Reset to first page when filters change
+      page: 1 // Reset to first page when filtering
     }));
   };
 
-  // Handle pagination
   const handlePageChange = (newPage) => {
-    setFilters(prev => ({ ...prev, page: newPage }));
+    setFilters(prev => ({
+      ...prev,
+      page: newPage
+    }));
   };
 
-  // Handle delete
-  const handleDelete = async (payment) => {
+  const handleDelete = async (paymentId, transactionId) => {
     const confirmed = await showConfirmation(
       'Delete Policy Payment',
-      `Are you sure you want to delete payment "${payment.transactionId}"? This action cannot be undone.`
+      `Are you sure you want to delete payment ${transactionId}? This action cannot be undone.`
     );
 
     if (confirmed) {
       try {
-        const response = await fetch(`/api/policy-payments/${payment._id}`, {
-          method: 'DELETE'
+        const response = await fetch(`/api/policy-payments/${paymentId}`, {
+          method: 'DELETE',
         });
 
-        const data = await response.json();
-
-        if (data.success) {
-          fetchPayments(); // Refresh the list
+        if (response.ok) {
+          await fetchPayments(); // Refresh the list
         } else {
-          setError(data.error || 'Failed to delete policy payment');
+          const errorData = await response.json();
+          alert('Error', errorData.error || 'Failed to delete policy payment');
         }
-      } catch (err) {
-        setError('Failed to delete policy payment');
-        console.error('Error deleting policy payment:', err);
+      } catch (error) {
+        console.error('Error deleting policy payment:', error);
+        alert('Error', 'Failed to delete policy payment');
       }
     }
   };
 
-  // Handle duplicate
-  const handleDuplicate = async (payment) => {
-    await duplicateRecord(payment);
-    fetchPayments(); // Refresh the list
+  const handleDuplicate = async (paymentId) => {
+    await duplicateRecord(paymentId, () => fetchPayments());
   };
 
-  if (loading && payments.length === 0) {
+  if (loading) {
     return (
       <ProtectedRoute>
         <Layout>
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading policy payments...</p>
-            </div>
+          <div className="flex items-center justify-center min-h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
           </div>
         </Layout>
       </ProtectedRoute>
@@ -135,11 +126,11 @@ export default function PolicyPaymentsPage() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Policy Payments</h1>
-              <p className="text-gray-600">Manage insurance premium payments</p>
+              <p className="text-gray-600">Manage premium payments</p>
             </div>
             <Link
               href="/policy-payments/create"
-              className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
               Add Payment
             </Link>
@@ -156,15 +147,29 @@ export default function PolicyPaymentsPage() {
               <li>
                 <div className="flex items-center">
                   <span className="text-gray-400 mx-2">/</span>
+                  <Link href="/insurance" className="text-gray-700 hover:text-orange-600">
+                    Insurance Module
+                  </Link>
+                </div>
+              </li>
+              <li>
+                <div className="flex items-center">
+                  <span className="text-gray-400 mx-2">/</span>
                   <span className="text-gray-500">Policy Payments</span>
                 </div>
               </li>
             </ol>
           </nav>
 
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-red-600">{error}</p>
+            </div>
+          )}
+
           {/* Filters */}
-          <div className="bg-white p-4 rounded-lg shadow-sm border">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Search
@@ -173,8 +178,8 @@ export default function PolicyPaymentsPage() {
                   type="text"
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
-                  placeholder="Search by transaction ID or reference..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900 placeholder-gray-500"
+                  placeholder="Search by transaction ID or policy..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900"
                 />
               </div>
               <div>
@@ -182,11 +187,11 @@ export default function PolicyPaymentsPage() {
                   Payment Mode
                 </label>
                 <select
-                  value={filters.modeOfPayment}
-                  onChange={(e) => handleFilterChange('modeOfPayment', e.target.value)}
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900"
                 >
-                  <option value="">All Payment Modes</option>
+                  <option value="">All Modes</option>
                   <option value="cash">Cash</option>
                   <option value="upi">UPI</option>
                   <option value="card">Card</option>
@@ -196,29 +201,7 @@ export default function PolicyPaymentsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  From Date
-                </label>
-                <input
-                  type="date"
-                  value={filters.startDate}
-                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  To Date
-                </label>
-                <input
-                  type="date"
-                  value={filters.endDate}
-                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-gray-900"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Items per page
+                  Per Page
                 </label>
                 <select
                   value={filters.limit}
@@ -233,24 +216,14 @@ export default function PolicyPaymentsPage() {
             </div>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          {/* Payments Table */}
+          {/* Policy Payments Table */}
           <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Transaction ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Customer
+                      Transaction
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Policy
@@ -259,10 +232,10 @@ export default function PolicyPaymentsPage() {
                       Amount
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Payment Mode
+                      Payment Date
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Payment Date
+                      Mode
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -273,78 +246,61 @@ export default function PolicyPaymentsPage() {
                   {payments.map((payment) => (
                     <tr key={payment._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {payment.transactionId}
-                        </div>
-                        {payment.reference && (
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {payment.transactionId}
+                          </div>
                           <div className="text-sm text-gray-500">
                             {payment.reference}
                           </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {payment.customer?.name || '-'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {payment.customerPolicy?.policyNumber || '-'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {payment.policy?.name || '-'}
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {payment.policyNumber}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {payment.customerName}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ₹{payment.amount?.toLocaleString() || '-'}
+                        ₹{payment.amount}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(payment.paymentDate).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          payment.modeOfPayment === 'cash' 
-                            ? 'bg-green-100 text-green-800'
-                            : payment.modeOfPayment === 'upi'
-                            ? 'bg-blue-100 text-blue-800'
-                            : payment.modeOfPayment === 'card'
-                            ? 'bg-purple-100 text-purple-800'
-                            : payment.modeOfPayment === 'bank_transfer'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {payment.modeOfPayment ? payment.modeOfPayment.charAt(0).toUpperCase() + payment.modeOfPayment.slice(1).replace('_', ' ') : '-'}
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {payment.modeOfPayment}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {payment.paymentDate 
-                          ? new Date(payment.paymentDate).toLocaleDateString()
-                          : '-'
-                        }
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <Link
-                            href={`/policy-payments/${payment._id}`}
-                            className="text-orange-600 hover:text-orange-900"
-                          >
-                            View
-                          </Link>
-                          <Link
-                            href={`/policy-payments/${payment._id}/edit`}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Edit
-                          </Link>
-                          <DuplicateRecord
-                            record={payment}
-                            recordType="PolicyPayment"
-                            onDuplicate={handleDuplicate}
-                          />
-                          <button
-                            onClick={() => handleDelete(payment)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                        <Link
+                          href={`/policy-payments/${payment._id}`}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          View
+                        </Link>
+                        <Link
+                          href={`/policy-payments/${payment._id}/edit`}
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => handleDuplicate(payment._id)}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Duplicate
+                        </button>
+                        <button
+                          onClick={() => handleDelete(payment._id, payment.transactionId)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -352,58 +308,76 @@ export default function PolicyPaymentsPage() {
               </table>
             </div>
 
-            {/* Empty State */}
-            {payments.length === 0 && !loading && (
-              <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-4">💳</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No policy payments found</h3>
-                <p className="text-gray-500 mb-4">
-                  {filters.search || filters.modeOfPayment || filters.startDate || filters.endDate 
-                    ? 'Try adjusting your search criteria.' 
-                    : 'Get started by adding your first policy payment.'
-                  }
-                </p>
-                {!filters.search && !filters.modeOfPayment && !filters.startDate && !filters.endDate && (
-                  <Link
-                    href="/policy-payments/create"
-                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={!pagination.hasPrev}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Add Payment
-                  </Link>
-                )}
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={!pagination.hasNext}
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing{' '}
+                      <span className="font-medium">
+                        {(pagination.page - 1) * pagination.limit + 1}
+                      </span>{' '}
+                      to{' '}
+                      <span className="font-medium">
+                        {Math.min(pagination.page * pagination.limit, pagination.total)}
+                      </span>{' '}
+                      of{' '}
+                      <span className="font-medium">{pagination.total}</span>{' '}
+                      results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                      <button
+                        onClick={() => handlePageChange(pagination.page - 1)}
+                        disabled={!pagination.hasPrev}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            page === pagination.page
+                              ? 'z-10 bg-orange-50 border-orange-500 text-orange-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => handlePageChange(pagination.page + 1)}
+                        disabled={!pagination.hasNext}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                {pagination.total} results
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={!pagination.hasPrev}
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Previous
-                </button>
-                <span className="px-3 py-1 text-sm text-gray-700">
-                  Page {pagination.page} of {pagination.totalPages}
-                </span>
-                <button
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={!pagination.hasNext}
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </Layout>
     </ProtectedRoute>
